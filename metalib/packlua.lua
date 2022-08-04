@@ -4,6 +4,7 @@
 
 local module = {}
 module.pieces = {}
+module.requiremap = {}
 module.requirepatterns = {}
 module._GLOBAL_MODULE_NAME = "_GLOBAL_MOD_"
 
@@ -77,26 +78,43 @@ end
 local _requiremap_template = [=[
 
 -- # _MOD_NAME_
---[[MOD BEGIN]] _GLOBAL_MOD_._requiremap["_MOD_NAME_"] = function()
+--[[MOD BEGIN]] _GLOBAL_MOD_._requiremap[_MOD_NAME_Q_] = function()
 _MOD_CONTENT_
 --[[MOD BEGIN]] end
 ]=]
 function module._push_requiremap(_MOD_NAME_, _MOD_CONTENT_)
     local piece = module._greplace(_requiremap_template, {
         _MOD_NAME_ = _MOD_NAME_,
-        _MOD_CONTENT_ = _MOD_CONTENT_,
+        _MOD_NAME_Q_ = string.format("%q", _MOD_NAME_),
+        _MOD_CONTENT_ = _MOD_CONTENT_
     })
     module._push(piece)
 end
 
-local _require_template = [=[_GLOBAL_MOD_["#REQUIRE"]("_MOD_NAME_")]=]
+local _require_template = [=[_GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)]=]
 function module._push_luafile_recursive(path)
-    local piece = module._readlua(path)
+    if module.requiremap[path] then
+        return
+    else
+        module.requiremap[path] = true
+    end
+    local luapath = path
+    if luapath:sub(-4):lower() == ".lua" then
+        luapath = luapath:sub(1, -5)
+    end
+    luapath = luapath:gsub("\\", "/"):gsub("([^%.])%.", "%1/") .. ".lua"
+    local piece = module._readlua(luapath)
+    if piece == nil then
+        print("read file failed: " .. path)
+        return
+    else
+        print("read file: " .. path)
+    end
     for _, pattern in ipairs(module.requirepatterns) do
         piece = piece:gsub(pattern, function(prefix, _MOD_NAME_)
-            module._push_luafile_recursive(path)
+            module._push_luafile_recursive(_MOD_NAME_)
             return prefix .. module._greplace(_require_template, {
-                _MOD_NAME_ = _MOD_NAME_
+                _MOD_NAME_Q_ = string.format("%q", _MOD_NAME_)
             })
         end)
     end
@@ -105,11 +123,11 @@ end
 
 local _tail_template = [=[
 
-return _GLOBAL_MOD_["#REQUIRE"]("_ROOT_PATH_")
+return _GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)
 ]=]
-function module._push_tail(_ROOT_PATH_)
+function module._push_tail(_MOD_NAME_)
     local piece = module._greplace(_tail_template, {
-        _ROOT_PATH_ = _ROOT_PATH_,
+        _MOD_NAME_Q_ = string.format("%q", _MOD_NAME_)
     })
     module._push(piece)
 end
@@ -124,6 +142,7 @@ end
 
 function module.pack(rootLuaPath, toLuaPath)
     module.pieces = {}
+    module.requiremap = {}
     module.requirepatterns = {}
     module.addRequireIdentifier("require")
     module.setGlobalName("LOCAL")
@@ -135,7 +154,7 @@ function module.pack(rootLuaPath, toLuaPath)
 end
 
 local rootLuaPath, toLuaPath = ...
-if rootLuaPath ~= nil and  toLuaPath ~= nil then
+if rootLuaPath ~= nil and toLuaPath ~= nil then
     module.pack(rootLuaPath, toLuaPath)
 end
 
