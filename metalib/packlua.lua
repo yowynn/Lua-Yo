@@ -5,15 +5,21 @@
 ---@usage:
 -- $ #copy `packlua.lua` to your project root
 -- $ lua packlua.lua path/to/entry.lua  path/to/output.lua
----
-local module = {}
-module.pieces = {}
-module.requiremap = {}
-module.requirepatterns = {}
-module._GLOBAL_MODULE_NAME = "_GLOBAL_MOD_"
+---@dependencies
+local error = error
+local print = print
+local io_open = io.open
+local table_concat = table.concat
 
-function module._readlua(path)
-    local f = io.open(path, "rb")
+
+local module = {}
+module._TEMPLATE_NAME = "_GLOBAL_MOD_"
+module._require_patterns = nil
+module._ctx_pieces = nil
+module._ctx_require_map = nil
+
+function module._readLua(path)
+    local f = io_open(path, "rb")
     if f == nil then
         return nil
     end
@@ -22,8 +28,8 @@ function module._readlua(path)
     return content
 end
 
-function module._writelua(path, content)
-    local f = io.open(path, "wb")
+function module._writeLua(path, content)
+    local f = io_open(path, "wb")
     if f == nil then
         return nil
     end
@@ -32,28 +38,24 @@ function module._writelua(path, content)
     return true
 end
 
-function module.addRequireIdentifier(identifier)
-    identifier = identifier:gsub("%.", "%%.")
-    module.requirepatterns[#module.requirepatterns + 1] = "^(%s*)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
-    module.requirepatterns[#module.requirepatterns + 1] = "(%s+)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
-    module.requirepatterns[#module.requirepatterns + 1] = "^(%s*)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
-    module.requirepatterns[#module.requirepatterns + 1] = "(%s+)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
-end
-
+--- global replace `_[%w_]+_` pattern to actual value
 function module._greplace(template, replacemap)
     return template:gsub("(_[%w_]+_)", replacemap)
 end
 
-function module._push(piece)
-    module.pieces[#module.pieces + 1] = piece
+function module._pushPiece(piece)
+    module._ctx_pieces[#module._ctx_pieces + 1] = piece
 end
 
-function module._content()
-    return table.concat(module.pieces)
+function module._contentPieces()
+    return table_concat(module._ctx_pieces)
 end
 
-local _head_template = [=[
---- genarate by packlua.lua
+module._TEMPLATE_HEAD = [=[
+-- *************************************************************
+-- **              genarate by ©packlua.lua                   **
+-- *************************************************************
+
 local _GLOBAL_MOD_ = {}
 _GLOBAL_MOD_._grequire = _G and _G.require or require or error("no fallback require")
 _GLOBAL_MOD_._loaded = {}
@@ -73,115 +75,121 @@ _GLOBAL_MOD_["#REQUIRE"] = function(modname)
         end
     end
 end
+
 ]=]
-function module._push_head()
-    local piece = _head_template
-    module._push(piece)
+function module._pushHead()
+    local piece = module._TEMPLATE_HEAD
+    module._pushPiece(piece)
 end
 
-local _requiremap_template = [=[
+module._TEMPLATE_REQUIREMAP = [=[
 
 -- # _MOD_NAME_
 --[[MOD BEGIN]] _GLOBAL_MOD_._requiremap[_MOD_NAME_Q_] = function()
 _MOD_CONTENT_
 --[[MOD BEGIN]] end
+
 ]=]
-function module._push_requiremap(_MOD_NAME_, _MOD_CONTENT_)
-    local piece = module._greplace(_requiremap_template, {
+function module._pushRequiremap(_MOD_NAME_, _MOD_CONTENT_)
+    local piece = module._greplace(module._TEMPLATE_REQUIREMAP, {
         _MOD_NAME_ = _MOD_NAME_,
-        _MOD_NAME_Q_ = string.format("%q", _MOD_NAME_),
+        _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_),
         _MOD_CONTENT_ = _MOD_CONTENT_
     })
-    module._push(piece)
+    module._pushPiece(piece)
 end
 
-local _require_template = [=[_GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)]=]
-function module._push_luafile_recursive(path)
-    if module.requiremap[path] then
+module._TEMPLATE_LOCALREQUIRE = [=[_GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)]=]
+function module._pushLuafileRecursive(path)
+    if module._ctx_require_map[path] then
         return
     else
-        module.requiremap[path] = true
+        module._ctx_require_map[path] = true
     end
     local luapath = path
     if luapath:sub(-4):lower() == ".lua" then
         luapath = luapath:sub(1, -5)
     end
     luapath = luapath:gsub("\\", "/"):gsub("([^%.])%.", "%1/") .. ".lua"
-    local piece = module._readlua(luapath)
+    local piece = module._readLua(luapath)
     if piece == nil then
         print("read file failed: " .. path)
         return
     else
         print("read file: " .. path)
     end
-    for _, pattern in ipairs(module.requirepatterns) do
+    for i = 1, #module._require_patterns do
+        local pattern = module._require_patterns[i]
         piece = piece:gsub(pattern, function(prefix, _MOD_NAME_)
-            module._push_luafile_recursive(_MOD_NAME_)
-            return prefix .. module._greplace(_require_template, {
-                _MOD_NAME_Q_ = string.format("%q", _MOD_NAME_)
+            module._pushLuafileRecursive(_MOD_NAME_)
+            return prefix .. module._greplace(module._TEMPLATE_LOCALREQUIRE, {
+                _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_)
             })
         end)
     end
-    module._push_requiremap(path, piece)
+    module._pushRequiremap(path, piece)
 end
 
-local _tail_template = [=[
+module._TEMPLATE_TAIL = [=[
 
 return _GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)
 ]=]
 function module._push_tail(_MOD_NAME_)
-    local piece = module._greplace(_tail_template, {
-        _MOD_NAME_Q_ = string.format("%q", _MOD_NAME_)
+    local piece = module._greplace(module._TEMPLATE_TAIL, {
+        _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_)
     })
-    module._push(piece)
+    module._pushPiece(piece)
 end
 
-function module.setGlobalName(_GLOBAL_MOD_)
-    _head_template = _head_template:gsub(module._GLOBAL_MODULE_NAME, _GLOBAL_MOD_)
-    _requiremap_template = _requiremap_template:gsub(module._GLOBAL_MODULE_NAME, _GLOBAL_MOD_)
-    _require_template = _require_template:gsub(module._GLOBAL_MODULE_NAME, _GLOBAL_MOD_)
-    _tail_template = _tail_template:gsub(module._GLOBAL_MODULE_NAME, _GLOBAL_MOD_)
-    module._GLOBAL_MODULE_NAME = _GLOBAL_MOD_
+--- set require patterns of your require identifier,
+--- to find your require and replace it to `packlua`'s require
+function module.AddRequireIdentifier(identifier)
+    identifier = identifier:gsub("%.", "%%.")
+    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
+    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
 end
 
-function module.init()
-    module.pieces = {}
-    module.requiremap = {}
-    module.requirepatterns = {}
+--- [optional] set global module name, default is "_GLOBAL_MOD_"
+function module.SetGlobalName(modname)
+    module._TEMPLATE_HEAD = module._TEMPLATE_HEAD:gsub(module._TEMPLATE_NAME, modname)
+    module._TEMPLATE_REQUIREMAP = module._TEMPLATE_REQUIREMAP:gsub(module._TEMPLATE_NAME, modname)
+    module._TEMPLATE_LOCALREQUIRE = module._TEMPLATE_LOCALREQUIRE:gsub(module._TEMPLATE_NAME, modname)
+    module._TEMPLATE_TAIL = module._TEMPLATE_TAIL:gsub(module._TEMPLATE_NAME, modname)
+    module._TEMPLATE_NAME = modname
 end
 
+--- start pack your lua project
 function module.pack(rootLuaPath, toLuaPath)
-    module._push_head()
-    module._push_luafile_recursive(rootLuaPath)
+    module._ctx_pieces = {}
+    module._ctx_require_map = {}
+    module._pushHead()
+    module._pushLuafileRecursive(rootLuaPath)
     module._push_tail(rootLuaPath)
-    local content = module._content()
-    module._writelua(toLuaPath, content)
+    local content = module._contentPieces()
+    module._writeLua(toLuaPath, content)
 end
 
-function module.example(pathToEntry, pathToOutput)
-    module.init()
-    module.addRequireIdentifier("require")
-    module.setGlobalName("LOCAL")
-    module.pack(pathToEntry, pathToOutput)
+local function module_initializer()
+    module._require_patterns = {}
+
+    --- add the Require identifiers
+    -- module.AddRequireIdentifier("_G.require")
+    module.AddRequireIdentifier("require")
+
+    --- set global module name, default is "_GLOBAL_MOD_"
+    module.SetGlobalName("LOCAL")
+
+    return module.pack
 end
 
-local module_public = (function()
-    local public = {
-        init = module.init,
-        pack = module.pack,
-        example = module.example,
-        addRequireIdentifier = module.addRequireIdentifier,
-        setGlobalName = module.setGlobalName
-    }
-    return public
-end)()
-
---- use for command line
-do
-    local pathToEntry, pathToOutput = ...
-    if pathToEntry ~= nil and pathToOutput ~= nil then
-        module_public.example(pathToEntry, pathToOutput)
-    end
+-- [[  use for command line, and as example
+local _pathToEntry, _pathToOutput = ...
+if _pathToEntry ~= nil and _pathToOutput ~= nil then
+    local pack = module_initializer()
+    pack(_pathToEntry, _pathToOutput)
 end
+--]]
 
-return module_public
+return module_initializer()

@@ -1,90 +1,112 @@
+#!/usr/bin/env lua5.4
+
+--- dump table to string
+---@author: Wynn Yo 2022-06-02 10:26:53
+---@dependencies
+local getmetatable = getmetatable
+local ipairs = ipairs
+local pairs = pairs
+local tostring = tostring
+local type = type
+local math_huge = math.huge
+local table_sort = table.sort
 
 
-local INDENT = "\t"
-local NEWLINE = "\n"
+local module = {}
 
-local _VERBOSE = true
-local _DEPTH_LIMIT = math.huge
+module.LITERAL_INDENT = nil
+module.LITERAL_NEWLINE = nil
+module.LITERAL_FOLDING_TAG = nil
+module.DEFAULT_VERBOSE = nil
+module.DEFAULT_DEPTH_LIMIT = nil
 
-local dumptable, dumptablekey, dumptablevalue, dumpstring, dumpnumber, dumpboolean, dumporiginal, dumpall
+module._ctx_verbose = nil
+module._ctx_depth_limit = nil
 
-function dumptable(t, depth)
+function module._dumpTable(t, depth)
     depth = (depth or 0) + 1
     local s = "{"
-    if _VERBOSE then
-        s = s .. " " .. dumporiginal(t, false)
+    if module._ctx_verbose then
+        s = s .. " " .. module._dumpOriginal(t, false)
     end
-    s = s .. NEWLINE
+    s = s .. module.LITERAL_NEWLINE
     local vkpairs = {}
     for k, v in pairs(t) do
-        vkpairs[#vkpairs + 1] = INDENT:rep(depth) .. dumptablekey(k, depth) .. " = " .. dumptablevalue(v, depth)
+        vkpairs[#vkpairs + 1] = module.LITERAL_INDENT:rep(depth) .. module._dumpTableKey(k, depth) .. " = " .. module._dumpTableValue(v, depth)
     end
-    table.sort(vkpairs)
+    table_sort(vkpairs)
     for _, v in ipairs(vkpairs) do
         s = s .. v
-        if not _VERBOSE then
+        if not module._ctx_verbose then
             s = s .. ","
         end
-        s = s .. NEWLINE
+        s = s .. module.LITERAL_NEWLINE
     end
-    if _VERBOSE then
+    if module._ctx_verbose then
         local mt = getmetatable(t)
         if mt then
-            s = s .. INDENT:rep(depth) .. ".metatable = " .. dumptable(mt, depth) .. NEWLINE
+            s = s .. module.LITERAL_INDENT:rep(depth) .. ".metatable = " .. module._dumpTable(mt, depth) .. module.LITERAL_NEWLINE
         end
     end
-    s = s .. INDENT:rep(depth - 1) .. "}"
+    s = s .. module.LITERAL_INDENT:rep(depth - 1) .. "}"
     return s
 end
 
-function dumptablekey(t, depth)
-    local s = dumpall(t, depth)
+function module._dumpTableKey(t, depth)
+    local s = module._dumpAll(t, depth)
     return "[" .. s .. "]"
 end
 
-function dumptablevalue(t, depth)
-    local s = dumpall(t, depth)
+function module._dumpTableValue(t, depth)
+    local s = module._dumpAll(t, depth)
     return s
 end
 
-function dumpstring(t, depth)
-    local s = "\"" .. t .. "\""
+function module._dumpString(t, depth)
+    local s
+    if module._ctx_verbose then
+        s = "\"" .. t .. "\""
+    else
+        s = ("%q"):format(t)
+    end
     return s
 end
 
-function dumpnumber(t, depth)
+function module._dumpNumber(t, depth)
     local s = tostring(t)
     return s
 end
 
-function dumpboolean(t, depth)
+function module._dumpBoolean(t, depth)
     local s = tostring(t)
     return s
 end
 
-function dumporiginal(t, fold)
-    fold = fold and "..." or ""
-    if _VERBOSE then
+function module._dumpOriginal(t, fold)
+    fold = fold and module.LITERAL_FOLDING_TAG or ""
+    if module._ctx_verbose then
         return "<" .. tostring(t) .. fold .. ">"
     else
-        return "nil" .. INDENT .. "--[[" .. tostring(t) .. fold .. "]]"
+        return "\"DMPERR:" .. tostring(t) .. fold .. "\""
+        -- return "nil" .. module.LITERAL_INDENT .. "--[[" .. tostring(t) .. fold .. "]]"
     end
 end
 
-function dumpall(t, depth)
-    if depth >= _DEPTH_LIMIT then
-        return dumporiginal(t, true)
-    end
+function module._dumpAll(t, depth)
     if type(t) == "table" then
-        return dumptable(t, depth)
+        if depth >= module._ctx_depth_limit then
+            return module._dumpOriginal(t, true)
+        else
+            return module._dumpTable(t, depth)
+        end
     elseif type(t) == "string" then
-        return dumpstring(t, depth)
+        return module._dumpString(t, depth)
     elseif type(t) == "number" then
-        return dumpnumber(t, depth)
+        return module._dumpNumber(t, depth)
     elseif type(t) == "boolean" then
-        return dumpboolean(t, depth)
+        return module._dumpBoolean(t, depth)
     else
-        return dumporiginal(t, false)
+        return module._dumpOriginal(t, false)
     end
 end
 
@@ -93,14 +115,29 @@ end
 ---@param verbose boolean @if true, dump the additional information, such as metatable, etc.
 ---@param depth number @depth limit
 ---@return string
-local function dump(t, verbose, depth)
-    _VERBOSE = verbose == nil and true or verbose
-    _DEPTH_LIMIT = depth == nil and math.huge or depth
-    local s = dumpall(t, 0)
+function module.dump(t, verbose, depth)
+    module._ctx_verbose = verbose == nil and module.DEFAULT_VERBOSE or verbose
+    module._ctx_depth_limit = depth == nil and module.DEFAULT_DEPTH_LIMIT or depth
+    local s = module._dumpAll(t, 0)
     return s
 end
 
+local function module_initializer()
+    module.LITERAL_INDENT = "\t"
+    module.LITERAL_NEWLINE = "\n"
+    module.LITERAL_FOLDING_TAG = "..."
+    module.DEFAULT_VERBOSE = true
+    module.DEFAULT_DEPTH_LIMIT = math_huge
+
+    return module.dump
+end
+
+-- [[  extend table.dump
 if table and not table.dump then
+    local dump = module_initializer()
     table.dump = dump
 end
-return dump
+-- ]]
+
+
+return module_initializer()
