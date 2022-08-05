@@ -1,7 +1,11 @@
+#!/usr/bin/env lua5.4
 
 --- pack a muiti-file lua project to a single lua file
 ---@author: Wynn Yo 2022-08-04 16:46:54
-
+---@usage:
+-- $ #copy `packlua.lua` to your project root
+-- $ lua packlua.lua path/to/entry.lua  path/to/output.lua
+---
 local module = {}
 module.pieces = {}
 module.requiremap = {}
@@ -140,12 +144,13 @@ function module.setGlobalName(_GLOBAL_MOD_)
     module._GLOBAL_MODULE_NAME = _GLOBAL_MOD_
 end
 
-function module.pack(rootLuaPath, toLuaPath)
+function module.init()
     module.pieces = {}
     module.requiremap = {}
     module.requirepatterns = {}
-    module.addRequireIdentifier("require")
-    module.setGlobalName("LOCAL")
+end
+
+function module.pack(rootLuaPath, toLuaPath)
     module._push_head()
     module._push_luafile_recursive(rootLuaPath)
     module._push_tail(rootLuaPath)
@@ -153,9 +158,30 @@ function module.pack(rootLuaPath, toLuaPath)
     module._writelua(toLuaPath, content)
 end
 
-local rootLuaPath, toLuaPath = ...
-if rootLuaPath ~= nil and toLuaPath ~= nil then
-    module.pack(rootLuaPath, toLuaPath)
+function module.example(pathToEntry, pathToOutput)
+    module.init()
+    module.addRequireIdentifier("require")
+    module.setGlobalName("LOCAL")
+    module.pack(pathToEntry, pathToOutput)
 end
 
-return module.pack
+local module_public = (function()
+    local public = {
+        init = module.init,
+        pack = module.pack,
+        example = module.example,
+        addRequireIdentifier = module.addRequireIdentifier,
+        setGlobalName = module.setGlobalName
+    }
+    return public
+end)()
+
+--- use for command line
+do
+    local pathToEntry, pathToOutput = ...
+    if pathToEntry ~= nil and pathToOutput ~= nil then
+        module_public.example(pathToEntry, pathToOutput)
+    end
+end
+
+return module_public
