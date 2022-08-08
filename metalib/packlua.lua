@@ -3,15 +3,20 @@
 --- pack a muiti-file lua project to a single lua file
 ---@author: Wynn Yo 2022-08-04 16:46:54
 ---@usage:
--- $ #copy `packlua.lua` to your project root
--- $ lua packlua.lua path/to/entry.lua  path/to/output.lua
+--[[
+    1. copy `packlua.lua` to your project root
+    2. run:
+        lua packlua.lua path/to/entry.lua  path/to/output.lua
+]]
+
 ---@dependencies
 local error = error
 local print = print
+local tostring = tostring
 local io_open = io.open
 local table_concat = table.concat
 
-
+---@class packlua
 local module = {}
 module._TEMPLATE_NAME = "_GLOBAL_MOD_"
 module._require_patterns = nil
@@ -113,10 +118,10 @@ function module._pushLuafileRecursive(path)
     luapath = luapath:gsub("\\", "/"):gsub("([^%.])%.", "%1/") .. ".lua"
     local piece = module._readLua(luapath)
     if piece == nil then
-        print("read file failed: " .. path)
+        print("[packlua]read file failed: " .. tostring(path))
         return
     else
-        print("read file: " .. path)
+        print("[packlua]read file success: " .. tostring(path))
     end
     for i = 1, #module._require_patterns do
         local pattern = module._require_patterns[i]
