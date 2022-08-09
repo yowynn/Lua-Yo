@@ -21,32 +21,32 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7a0ca345-e081-4d76-8bbd-3f0fc5d007f6}</ProjectGuid>
-    <RootNamespace>lualib</RootNamespace>
+    <ProjectGuid>{ffb6c4a4-0350-4ce7-855e-a0f2c14fd61a}</ProjectGuid>
+    <RootNamespace>lualibdyna</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -132,6 +132,36 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lapi.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lauxlib.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lcode.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lctype.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\ldebug.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\ldo.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lfunc.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lgc.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\ljumptab.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\llex.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\llimits.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lmem.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lobject.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lopcodes.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lopnames.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lparser.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lprefix.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lstate.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lstring.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\ltable.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\ltm.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.hpp" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lundump.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lvm.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lzio.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="..\..\..\lua-5.4.4\src\lapi.c" />
     <ClCompile Include="..\..\..\lua-5.4.4\src\lauxlib.c" />
     <ClCompile Include="..\..\..\lua-5.4.4\src\lbaselib.c" />
@@ -164,36 +194,6 @@
     <ClCompile Include="..\..\..\lua-5.4.4\src\lutf8lib.c" />
     <ClCompile Include="..\..\..\lua-5.4.4\src\lvm.c" />
     <ClCompile Include="..\..\..\lua-5.4.4\src\lzio.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lapi.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lauxlib.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lcode.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lctype.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\ldebug.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\ldo.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lfunc.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lgc.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\ljumptab.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\llex.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\llimits.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lmem.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lobject.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lopcodes.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lopnames.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lparser.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lprefix.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lstate.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lstring.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\ltable.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\ltm.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.hpp" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lundump.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lvm.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lzio.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

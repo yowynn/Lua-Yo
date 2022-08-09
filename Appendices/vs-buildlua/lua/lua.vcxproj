@@ -129,12 +129,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\lualib\lualib.vcxproj">
-      <Project>{7a0ca345-e081-4d76-8bbd-3f0fc5d007f6}</Project>
-    </ProjectReference>
+    <ClCompile Include="..\..\..\lua-5.4.4\src\lua.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\lua-5.4.4\src\lua.c" />
+    <ProjectReference Include="..\lualib(dyna)\lualib(dyna).vcxproj">
+      <Project>{ffb6c4a4-0350-4ce7-855e-a0f2c14fd61a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
