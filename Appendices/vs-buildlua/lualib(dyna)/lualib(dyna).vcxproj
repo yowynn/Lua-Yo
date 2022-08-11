@@ -187,6 +187,7 @@
     <ClInclude Include="..\..\..\lua-5.4.4\src\ltable.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\ltm.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.hpp" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lundump.h" />

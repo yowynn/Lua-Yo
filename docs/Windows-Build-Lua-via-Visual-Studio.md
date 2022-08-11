@@ -27,7 +27,7 @@
     >
 
     > 实际会用到的头文件:
-    `lapi.h`, `lauxlib.h`, `lcode.h`, `lctype.h`, `ldebug.h`, `ldo.h`, `lfunc.h`, `lgc.h`, `ljumptab.h`, `llex.h`, `llimits.h`, `lmem.h`, `lobject.h`, `lopcodes.h`, ~~`lopnames.h`~~, `lparser.h`, `lprefix.h`, `lstate.h`, `lstring.h`, `ltable.h`, `ltm.h`, `lua.h`, `luaconf.h`, `lualib.h`, `lundump.h`, `lvm.h`, `lzio.h`
+    `lapi.h`, `lauxlib.h`, `lcode.h`, `lctype.h`, `ldebug.h`, `ldo.h`, `lfunc.h`, `lgc.h`, `ljumptab.h`, `llex.h`, `llimits.h`, `lmem.h`, `lobject.h`, `lopcodes.h`, ~~`lopnames.h`~~, `lparser.h`, `lprefix.h`, `lstate.h`, `lstring.h`, `ltable.h`, `ltm.h`, `lua.h`, `lua.hpp`, `luaconf.h`, `lualib.h`, `lundump.h`, `lvm.h`, `lzio.h`
     >
 4. 修改项目属性 (右键 `lualib` 项目 → 属性)
     1. [optional] 配置属性 → 常规 → 目标文件名 ⇒ 设置为 `lua54`
@@ -60,7 +60,7 @@
     >
 
     > 实际会用到的头文件:
-    `lapi.h`, `lauxlib.h`, `lcode.h`, `lctype.h`, `ldebug.h`, `ldo.h`, `lfunc.h`, `lgc.h`, `ljumptab.h`, `llex.h`, `llimits.h`, `lmem.h`, `lobject.h`, `lopcodes.h`, ~~`lopnames.h`~~, `lparser.h`, `lprefix.h`, `lstate.h`, `lstring.h`, `ltable.h`, `ltm.h`, `lua.h`, `luaconf.h`, `lualib.h`, `lundump.h`, `lvm.h`, `lzio.h`
+    `lapi.h`, `lauxlib.h`, `lcode.h`, `lctype.h`, `ldebug.h`, `ldo.h`, `lfunc.h`, `lgc.h`, `ljumptab.h`, `llex.h`, `llimits.h`, `lmem.h`, `lobject.h`, `lopcodes.h`, ~~`lopnames.h`~~, `lparser.h`, `lprefix.h`, `lstate.h`, `lstring.h`, `ltable.h`, `ltm.h`, `lua.h`, `lua.hpp`, `luaconf.h`, `lualib.h`, `lundump.h`, `lvm.h`, `lzio.h`
     >
 4. 修改项目属性 (右键 `lualib(dyna)` 项目 → 属性)
     1. [optional] 配置属性 → 常规 → 目标文件名 ⇒ 设置为 `lua54`
@@ -98,7 +98,7 @@
     >
 
     > 实际会用到的头文件:
-    ~~`lapi.h`~~, `lauxlib.h`, ~~`lcode.h`~~, ~~`lctype.h`~~, ~~`ldebug.h`~~, ~~`ldo.h`~~, ~~`lfunc.h`~~, ~~`lgc.h`~~, ~~`ljumptab.h`~~, ~~`llex.h`~~, ~~`llimits.h`~~, ~~`lmem.h`~~, ~~`lobject.h`~~, ~~`lopcodes.h`~~, ~~`lopnames.h`~~, ~~`lparser.h`~~, `lprefix.h`, ~~`lstate.h`~~, ~~`lstring.h`~~, ~~`ltable.h`~~, ~~`ltm.h`~~, `lua.h`, `luaconf.h`, `lualib.h`, ~~`lundump.h`~~, ~~`lvm.h`~~, ~~`lzio.h`~~
+    ~~`lapi.h`~~, `lauxlib.h`, ~~`lcode.h`~~, ~~`lctype.h`~~, ~~`ldebug.h`~~, ~~`ldo.h`~~, ~~`lfunc.h`~~, ~~`lgc.h`~~, ~~`ljumptab.h`~~, ~~`llex.h`~~, ~~`llimits.h`~~, ~~`lmem.h`~~, ~~`lobject.h`~~, ~~`lopcodes.h`~~, ~~`lopnames.h`~~, ~~`lparser.h`~~, `lprefix.h`, ~~`lstate.h`~~, ~~`lstring.h`~~, ~~`ltable.h`~~, ~~`ltm.h`~~, `lua.h`, ~~`lua.hpp`~~, `luaconf.h`, `lualib.h`, ~~`lundump.h`~~, ~~`lvm.h`~~, ~~`lzio.h`~~
     >
 5. 修改项目属性 (右键 `lua` 项目 → 属性)
     1. [optional] 配置属性 → 常规 → 目标文件名 ⇒ 设置为 `lua`
@@ -130,7 +130,7 @@
     >
 
     > 实际会用到的头文件:
-    `lapi.h`, `lauxlib.h`, `lcode.h`, `lctype.h`, `ldebug.h`, `ldo.h`, `lfunc.h`, `lgc.h`, `ljumptab.h`, `llex.h`, `llimits.h`, `lmem.h`, `lobject.h`, `lopcodes.h`, `lopnames.h`, `lparser.h`, `lprefix.h`, `lstate.h`, `lstring.h`, `ltable.h`, `ltm.h`, `lua.h`, `luaconf.h`, `lualib.h`, `lundump.h`, `lvm.h`, `lzio.h`
+    `lapi.h`, `lauxlib.h`, `lcode.h`, `lctype.h`, `ldebug.h`, `ldo.h`, `lfunc.h`, `lgc.h`, `ljumptab.h`, `llex.h`, `llimits.h`, `lmem.h`, `lobject.h`, `lopcodes.h`, `lopnames.h`, `lparser.h`, `lprefix.h`, `lstate.h`, `lstring.h`, `ltable.h`, `ltm.h`, `lua.h`, ~~`lua.hpp`~~, `luaconf.h`, `lualib.h`, `lundump.h`, `lvm.h`, `lzio.h`
     >
 4. 修改项目属性 (右键 `luac` 项目 → 属性)
     1. [optional] 配置属性 → 常规 → 目标文件名 ⇒ 设置为 `luac`

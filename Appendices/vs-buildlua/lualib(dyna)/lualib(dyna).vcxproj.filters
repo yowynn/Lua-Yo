@@ -191,5 +191,8 @@
     <ClInclude Include="..\..\..\lua-5.4.4\src\lzio.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

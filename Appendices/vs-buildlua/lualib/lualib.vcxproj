@@ -180,6 +180,7 @@
     <ClInclude Include="..\..\..\lua-5.4.4\src\lmem.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lobject.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lopcodes.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lopnames.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lparser.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lprefix.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lstate.h" />
@@ -187,6 +188,7 @@
     <ClInclude Include="..\..\..\lua-5.4.4\src\ltable.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\ltm.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.hpp" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lundump.h" />
