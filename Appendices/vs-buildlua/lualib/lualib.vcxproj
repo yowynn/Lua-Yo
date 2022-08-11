@@ -119,10 +119,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LUA_BUILD_AS_DLL;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <CompileAs>CompileAsC</CompileAs>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -180,7 +180,6 @@
     <ClInclude Include="..\..\..\lua-5.4.4\src\lmem.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lobject.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lopcodes.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lopnames.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lparser.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lprefix.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lstate.h" />
@@ -188,7 +187,6 @@
     <ClInclude Include="..\..\..\lua-5.4.4\src\ltable.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\ltm.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.hpp" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h" />
     <ClInclude Include="..\..\..\lua-5.4.4\src\lundump.h" />

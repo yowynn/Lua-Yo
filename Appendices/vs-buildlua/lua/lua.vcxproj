@@ -136,6 +136,13 @@
       <Project>{ffb6c4a4-0350-4ce7-855e-a0f2c14fd61a}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lauxlib.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lprefix.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h" />
+    <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
