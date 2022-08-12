@@ -34,10 +34,12 @@ local assert = assert
 local pairs = pairs
 local setmetatable = setmetatable
 local tonumber = tonumber
+local tostring = tostring
 local xpcall = xpcall
 local coroutine = coroutine
 local debug_traceback = debug.traceback
 local math_floor = math.floor
+local os_time = os.time
 local string_char = string.char
 
 ---@class net
@@ -57,6 +59,8 @@ function module._new(_socket)
     self.m_marks = {}
     self.m_onRecv = nil
     self.m_recvThread = nil
+    self.m_createdTime = nil
+    self.m_lastAccessTime = nil
     setmetatable(self, module)
     return self
 end
@@ -83,7 +87,7 @@ function module.listen(host, port, onConnect, onClose, backlog)
     _socket:bind(host, port)
     local ok, err = _socket:listen(backlog)
     if not ok then
-        module.close(server, "[net]listen failed: " .. err)
+        module.close(server, "[net]listen failed: " .. tostring(err))
         return nil
     else
         return module._onListen(server)
@@ -101,7 +105,7 @@ function module.connect(host, port, onConnect, onClose)
     local _socket = client.m_socket
     local ok, err = _socket:connect(host, port)
     if not ok then
-        module.close(client, "[net]connect failed: " .. err)
+        module.close(client, "[net]connect failed: " .. tostring(err))
         return nil
     else
         return module._onConnect(client)
@@ -110,19 +114,34 @@ end
 
 function module:_onListen()
     module._server_objects[self] = true
+    self.m_createdTime = os_time()
+    self.m_lastAccessTime = self.m_createdTime
     return self
 end
 
 function module:_onConnect()
     module._client_objects[self] = true
+    self.m_createdTime = os_time()
+    self.m_lastAccessTime = self.m_createdTime
     if self.m_onConnect then
         local ok, err = xpcall(self.m_onConnect, debug_traceback, self)
         if not ok then
-            module.close(self, "[net]execute onConnect failed: " .. err)
+            module.close(self, "[net]execute onConnect failed: " .. tostring(err))
             return
         end
     end
     return self
+end
+
+function module:_onReceive(message)
+    self.m_lastAccessTime = os_time()
+    if self.m_onRecv then
+        local ok, err = xpcall(self.m_onRecv, debug_traceback, self, message)
+        if not ok then
+            module.close(self, "[net]execute onRecv failed: " .. err)
+            return
+        end
+    end
 end
 
 function module:getPeerInfo()
@@ -135,6 +154,14 @@ function module:getPeerInfo()
     }
 end
 
+function module:getCreatedTime()
+    return self.m_createdTime
+end
+
+function module:getLastAccessTime()
+    return self.m_lastAccessTime
+end
+
 function module.update()
     --- server accept
     for server in pairs(module._server_objects) do
@@ -143,6 +170,7 @@ function module.update()
         if ok then
             local _accept, err = _socket:accept()
             if _accept then
+                server.m_lastAccessTime = os_time()
                 local client = module._new(_accept)
                 local peerInfo = client:getPeerInfo()
                 client.m_host = peerInfo.host
@@ -151,10 +179,11 @@ function module.update()
                 client.m_onClose = server.m_onClose
                 module._onConnect(client)
             elseif err ~= "timeout" then
-                module.close(server, "[net]accept failed: " .. err)
+                server.m_lastAccessTime = os_time()
+                module.close(server, "[net]accept failed: " .. tostring(err))
             end
         else
-            module.close(server, "[net]settimeout failed (accept): " .. err)
+            module.close(server, "[net]settimeout failed (accept): " .. tostring(err))
         end
     end
     --- client receive
@@ -168,8 +197,14 @@ end
 
 function module:onRecv(msgHandler)
     self.m_onRecv = msgHandler
-    if self.m_recvThread then
-        self.m_recvThread = coroutine.create(module._recvCoroutine)
+    if msgHandler == false then
+        if self.m_recvThread then
+            self.m_recvThread = nil
+        end
+    else
+        if not self.m_recvThread then
+            self.m_recvThread = coroutine.create(module._recvCoroutine)
+        end
     end
 end
 
@@ -187,29 +222,23 @@ function module:_recvCoroutine()
                 elseif err == "timeout" then
                     coroutine.yield()
                 else
-                    module.close(self, "[net]receive failed (length): " .. err)
+                    module.close(self, "[net]receive failed (length): " .. tostring(err))
                     return
                 end
             else
                 local _data, err = _socket:receive(_recvingLength)
                 if _data then
                     _recvingLength = nil
-                    if self.m_onRecv then
-                        local ok, err = xpcall(self.m_onRecv, debug_traceback, self, _data)
-                        if not ok then
-                            module.close(self, "[net]execute onRecv failed: " .. err)
-                            return
-                        end
-                    end
+                    module._onReceive(self, _data)
                 elseif err == "timeout" then
                     coroutine.yield()
                 else
-                    module.close(self, "[net]receive failed (data): " .. err)
+                    module.close(self, "[net]receive failed (data): " .. tostring(err))
                     return
                 end
             end
         else
-            module.close(self, "[net]settimeout failed (receive): " .. err)
+            module.close(self, "[net]settimeout failed (receive): " .. tostring(err))
             break
         end
     end
@@ -224,24 +253,24 @@ function module:send(message)
     local _data = string_char(_1, _2, _3, _4) .. message
     local ok, err = _socket:send(_data)
     if not ok then
-        module.close(self, "[net]send failed: " .. err)
+        module.close(self, "[net]send failed: " .. tostring(err))
     end
 end
 
 function module:close(reason)
     local _socket = self.m_socket
     if _socket then
-        if self.m_onClose then
-            local ok, err = xpcall(self.m_onClose, debug_traceback, self, reason)
-            if not ok then
-                module.close(self, "[net]execute onClose failed: " .. err)
-            end
-        end
+        self:onRecv(false)
         self.m_socket = nil
-        self.m_recvThread = nil
         module._client_objects[self] = nil
         module._server_objects[self] = nil
         _socket:close()
+        if self.m_onClose then
+            local ok, err = xpcall(self.m_onClose, debug_traceback, self, reason)
+            if not ok then
+                module.close(self, "[net]execute onClose failed: " .. tostring(err))
+            end
+        end
     end
 end
 
@@ -257,6 +286,8 @@ local function module_initializer()
         send = module.send,
         close = module.close,
         getPeerInfo = module.getPeerInfo,
+        getCreatedTime = module.getCreatedTime,
+        getLastAccessTime = module.getLastAccessTime,
     }
     --- static methods
     local static = {
