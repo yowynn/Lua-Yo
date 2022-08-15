@@ -270,7 +270,8 @@ function module:_recvCoroutine(data)
                 _recvingLength = _1 * 16777216 + _2 * 65536 + _3 * 256 + _4
                 _p = _p + 4
             else
-                _buffer = _buffer .. coroutine.yield()
+                self, data = coroutine.yield()
+                _buffer = _buffer .. data
             end
         else
             if _len >= _recvingLength then
@@ -279,7 +280,8 @@ function module:_recvCoroutine(data)
                 _recvingLength = nil
                 module._onReceive(self, message)
             else
-                _buffer = _buffer .. coroutine.yield()
+                self, data = coroutine.yield()
+                _buffer = _buffer .. data
             end
         end
         if _p >= #_buffer then
