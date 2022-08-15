@@ -5,27 +5,33 @@
 ---@usage:
 --[[
     local net = require "net"
-    -- #server side:
-    local server = net.listen("0.0.0.0", 1234, function(client)
-        print("net conncet", client:getPeerInfo().host)
-        client:onRecv(function(client, message)
-            print("server receive: " .. message)
-            client:send("server send: " .. message)
+    local mode = "client" or "server"
+    if mode == "client" then
+        -- #client side:
+        local client = net.connect("127.0.0.1", 1234, function(client)
+            print("net conncet", client:getPeerInfo().host)
+            client:onRecv(function(client, message)
+                print("client receive: " .. message)
+            end)
+            client:send("client send: hello")
         end, function(client, reason)
             print("net close: " .. reason)
         end)
-    end)
-
-    -- #client side:
-    local client = net.connect("127.0.0.1", 1234, function(client)
-        print("net conncet", client:getPeerInfo().host)
-        client:onRecv(function(client, message)
-            print("client receive: " .. message)
+    elseif mode == "server" then
+        -- #server side:
+        local server = net.listen("0.0.0.0", 1234, function(client)
+            print("net conncet", client:getPeerInfo().host)
+            client:onRecv(function(client, message)
+                print("server receive: " .. message)
+                client:send("server send: " .. message)
+            end)
         end, function(client, reason)
             print("net close: " .. reason)
         end)
-        client:send("client send: hello")
-    end)
+    end
+    while true do
+        net.update()
+    end
 --]]
 ---@dependencies
 local uv = require("luv") -- @https://github.com/luvit/luv
@@ -209,10 +215,13 @@ function module:onRecv(msgHandler)
                     return
                 end
                 if chunk then
-                    local ok, err = coroutine.resume(self.m_recvThread, chunk)
-                    if not ok then
-                        module.close(self, "[net]receive failed: " .. tostring(err))
-                        return
+                    local recvThread = self.m_recvThread
+                    if recvThread and coroutine.status(recvThread) ~= "dead" then
+                        local ok, err = coroutine.resume(self.m_recvThread, chunk)
+                        if not ok then
+                            module.close(self, "[net]receive coroutine failed: " .. tostring(err))
+                            return
+                        end
                     end
                 else
                     module.close(self, "[net]receive failed: " .. "receive nothing")
