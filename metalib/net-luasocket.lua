@@ -5,27 +5,33 @@
 ---@usage:
 --[[
     local net = require "net"
-    -- #server side:
-    local server = net.listen("0.0.0.0", 1234, function(client)
-        print("net conncet", client:getPeerInfo().host)
-        client:onRecv(function(client, message)
-            print("server receive: " .. message)
-            client:send("server send: " .. message)
+    local mode = "client" or "server"
+    if mode == "client" then
+        -- #client side:
+        local client = net.connect("127.0.0.1", 1234, function(client)
+            print("net conncet", client:getPeerInfo().host)
+            client:onRecv(function(client, message)
+                print("client receive: " .. message)
+            end)
+            client:send("client send: hello")
         end, function(client, reason)
             print("net close: " .. reason)
         end)
-    end)
-
-    -- #client side:
-    local client = net.connect("127.0.0.1", 1234, function(client)
-        print("net conncet", client:getPeerInfo().host)
-        client:onRecv(function(client, message)
-            print("client receive: " .. message)
+    elseif mode == "server" then
+        -- #server side:
+        local server = net.listen("0.0.0.0", 1234, function(client)
+            print("net conncet", client:getPeerInfo().host)
+            client:onRecv(function(client, message)
+                print("server receive: " .. message)
+                client:send("server send: " .. message)
+            end)
         end, function(client, reason)
             print("net close: " .. reason)
         end)
-        client:send("client send: hello")
-    end)
+    end
+    while true do
+        net.update()
+    end
 --]]
 
 ---@dependencies
@@ -189,8 +195,12 @@ function module.update()
     --- client receive
     for client in pairs(module._client_objects) do
         local recvThread = client.m_recvThread
-        if recvThread then
-            coroutine.resume(recvThread, client)
+        if recvThread and coroutine.status(recvThread) ~= "dead" then
+            local ok, err = coroutine.resume(recvThread, client)
+            if not ok then
+                module.close(self, "[net]receive coroutine failed: " .. tostring(err))
+                return
+            end
         end
     end
 end
@@ -217,12 +227,12 @@ function module:_recvCoroutine()
             if _recvingLength == nil then
                 local _data, err = _socket:receive(4)
                 if _data then
-                    local _1, _2, _3, _4 = _data:byte(_data, 1, 4)
+                    local _1, _2, _3, _4 = _data:byte(1, 4)
                     _recvingLength = _1 * 16777216 + _2 * 65536 + _3 * 256 + _4
                 elseif err == "timeout" then
                     coroutine.yield()
                 else
-                    module.close(self, "[net]receive failed (length): " .. tostring(err))
+                    module.close(self, "[net]receive failed: " .. tostring(err))
                     return
                 end
             else
@@ -233,13 +243,13 @@ function module:_recvCoroutine()
                 elseif err == "timeout" then
                     coroutine.yield()
                 else
-                    module.close(self, "[net]receive failed (data): " .. tostring(err))
+                    module.close(self, "[net]receive failed: " .. tostring(err))
                     return
                 end
             end
         else
             module.close(self, "[net]settimeout failed (receive): " .. tostring(err))
-            break
+            return
         end
     end
 end
