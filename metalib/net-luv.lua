@@ -217,7 +217,7 @@ function module:onRecv(msgHandler)
                 if chunk then
                     local recvThread = self.m_recvThread
                     if recvThread and coroutine.status(recvThread) ~= "dead" then
-                        local ok, err = coroutine.resume(self.m_recvThread, chunk)
+                        local ok, err = coroutine.resume(self.m_recvThread, self, chunk)
                         if not ok then
                             module.close(self, "[net]receive coroutine failed: " .. tostring(err))
                             return

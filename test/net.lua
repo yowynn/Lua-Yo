@@ -1,7 +1,10 @@
 local m = ...
 local mode = m == "c" and "client" or "server"
 print("start net test: " .. mode)
-local net = require "metalib.net-luasocket"
+
+-- local net = require "metalib.net-luasocket"
+local net = require "metalib.net-luv"
+
 if mode == "client" then
     -- #client side:
     local client = net.connect("127.0.0.1", 1234, function(client)
