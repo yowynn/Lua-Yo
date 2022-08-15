@@ -4,7 +4,7 @@
 ---@author: Wynn Yo 2022-08-12 19:01:08
 ---@usage:
 --[[ --
-    local net = require "net"
+    local net = require("net")
     local mode = "client" or "server"
     if mode == "client" then
         -- #client side:
@@ -34,7 +34,7 @@
     end
 --]] --
 ---@dependencies
-local uv = require("luv") -- @https://github.com/luvit/luv
+local luv = require("luv") -- @https://github.com/luvit/luv
 local assert = assert
 local pairs = pairs
 local setmetatable = setmetatable
@@ -63,7 +63,7 @@ module.__index = nil
 
 function module._new(_stream)
     local self = {}
-    self.m_stream = _stream or uv.new_tcp()
+    self.m_stream = _stream or luv.new_tcp()
     self.m_host = nil
     self.m_port = nil
     self.m_onConnect = nil
@@ -206,7 +206,7 @@ end
 
 --- need to be called in the main thread
 function module.update()
-    uv.run("nowait")
+    luv.run("nowait")
 end
 
 --- set a handler to handle received message, and begin to receive message

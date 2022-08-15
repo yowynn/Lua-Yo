@@ -4,7 +4,7 @@
 ---@author: Wynn Yo 2022-06-24 10:18:31
 ---@usage:
 --[[ --
-    local net = require "net"
+    local net = require("net")
     local mode = "client" or "server"
     if mode == "client" then
         -- #client side:
