@@ -14,11 +14,29 @@ dependencies = {
             name = "lua"
          }
       }
+   },
+   luv = {
+      ["1.44.2-0"] = {
+         {
+            constraints = {
+               {
+                  op = ">=",
+                  version = {
+                     5, 1, string = "5.1"
+                  }
+               }
+            },
+            name = "lua"
+         }
+      }
    }
 }
 modules = {
    ltn12 = {
       "luasocket/3.1.0-1"
+   },
+   luv = {
+      "luv/1.44.2-0"
    },
    mime = {
       "luasocket/3.1.0-1"
@@ -70,6 +88,18 @@ repository = {
                ["socket.smtp"] = "socket/smtp.lua",
                ["socket.tp"] = "socket/tp.lua",
                ["socket.url"] = "socket/url.lua"
+            }
+         }
+      }
+   },
+   luv = {
+      ["1.44.2-0"] = {
+         {
+            arch = "installed",
+            commands = {},
+            dependencies = {},
+            modules = {
+               luv = "luv.dll"
             }
          }
       }
