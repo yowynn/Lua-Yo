@@ -2,8 +2,7 @@ local m = ...
 local mode = m == "c" and "client" or "server"
 print("start net test: " .. mode)
 
--- local net = require "metalib.net-luasocket"
-local net = require "metalib.net-luv"
+local net = require "net"
 
 if mode == "client" then
     -- #client side:

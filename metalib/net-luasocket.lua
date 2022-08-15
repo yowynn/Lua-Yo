@@ -3,7 +3,7 @@
 --- the net module (via luasocket)
 ---@author: Wynn Yo 2022-06-24 10:18:31
 ---@usage:
---[[
+--[[ --
     local net = require "net"
     local mode = "client" or "server"
     if mode == "client" then
@@ -32,7 +32,7 @@
     while true do
         net.update()
     end
---]]
+--]] --
 
 ---@dependencies
 local socket = require("socket") -- @https://lunarmodules.github.io/luasocket/
@@ -50,9 +50,16 @@ local string_char = string.char
 
 ---@class net
 local module = {}
+
+--- default backlog
 module.DEFAULT_BACKLOG = nil
+
+--- map to hold server objects
 module._server_objects = nil
+
+--- map to hold client objects
 module._client_objects = nil
+
 module.__index = nil
 
 function module._new(_socket)
@@ -71,6 +78,8 @@ function module._new(_socket)
     return self
 end
 
+--- add custom key-value infomaion to the net object
+--- return current value if the value in not present
 function module:mark(key, value)
     assert(key, "[net]key is nil")
     if value ~= nil then
@@ -79,6 +88,12 @@ function module:mark(key, value)
     return self.m_marks[key]
 end
 
+--- listen on the given host and port
+---@param host string
+---@param port number
+---@param onConnect fun(client:net) @callback when client connected
+---@param onClose fun(client:net, reason:string) @callback when client closed
+---@param backlog number @default: module.DEFAULT_BACKLOG
 function module.listen(host, port, onConnect, onClose, backlog)
     assert(host, "[net]host is nil")
     assert(tonumber(port), "[net]port is nil")
@@ -100,6 +115,11 @@ function module.listen(host, port, onConnect, onClose, backlog)
     end
 end
 
+--- connect to the given host and port
+---@param host string
+---@param port number
+---@param onConnect fun(client:net) @callback when client connected
+---@param onClose fun(client:net, reason:string) @callback when client closed
 function module.connect(host, port, onConnect, onClose)
     assert(host, "[net]host is nil")
     assert(tonumber(port), "[net]port is nil")
@@ -150,6 +170,7 @@ function module:_onReceive(message)
     end
 end
 
+--- return a table of host, port and family infos
 function module:getPeerInfo()
     local _socket = self.m_socket
     local host, port, family = _socket:getpeername()
@@ -160,14 +181,17 @@ function module:getPeerInfo()
     }
 end
 
+--- return the create time of the net object
 function module:getCreatedTime()
     return self.m_createdTime
 end
 
+--- return the last access time of the net object
 function module:getLastAccessTime()
     return self.m_lastAccessTime
 end
 
+--- need to be called in the main thread
 function module.update()
     --- server accept
     for server in pairs(module._server_objects) do
@@ -205,6 +229,8 @@ function module.update()
     end
 end
 
+--- set a handler to handle received message, and begin to receive message
+---@param msgHandler fun(target:net, message:string)
 function module:onRecv(msgHandler)
     self.m_onRecv = msgHandler
     if msgHandler == false then
@@ -254,6 +280,8 @@ function module:_recvCoroutine()
     end
 end
 
+--- send message to the peer
+---@param message string
 function module:send(message)
     assert(message, "[net]message is nil")
     local _socket = assert(self.m_socket, "[net]bad status (send)")
@@ -267,6 +295,8 @@ function module:send(message)
     end
 end
 
+--- close the net object
+---@param reason string @witch pass to the onClose callback
 function module:close(reason)
     local _socket = self.m_socket
     if _socket then

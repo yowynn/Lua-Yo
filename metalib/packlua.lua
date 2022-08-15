@@ -3,12 +3,11 @@
 --- pack a muiti-file lua project to a single lua file
 ---@author: Wynn Yo 2022-08-04 16:46:54
 ---@usage:
---[[
+--[[ --
     1. copy `packlua.lua` to your project root
     2. run:
         lua packlua.lua path/to/entry.lua  path/to/output.lua
-]]
-
+]] --
 ---@dependencies
 local error = error
 local print = print
@@ -18,8 +17,13 @@ local table_concat = table.concat
 
 ---@class packlua
 local module = {}
+
+--- the global module name of the out file (It doesn't matter what it is)
 module._TEMPLATE_NAME = "_GLOBAL_MOD_"
+
+--- the patterns to find out "require" statement
 module._require_patterns = nil
+
 module._ctx_pieces = nil
 module._ctx_require_map = nil
 
@@ -150,8 +154,10 @@ end
 --- to find your require and replace it to `packlua`'s require
 function module.AddRequireIdentifier(identifier)
     identifier = identifier:gsub("%.", "%%.")
-    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
-    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier ..
+                                                                  "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier ..
+                                                                  "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
     module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
     module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
 end
@@ -195,6 +201,6 @@ if _pathToEntry ~= nil and _pathToOutput ~= nil then
     local pack = module_initializer()
     pack(_pathToEntry, _pathToOutput)
 end
---]]
+-- ]]
 
 return module_initializer()
