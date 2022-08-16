@@ -183,7 +183,6 @@ function module._buildContext()
     _context = setmetatable({
         from = context.from,
         to = context.to,
-        delay = context.delay,
     }, {
         __index = function(t, k)
             local proxy = function(...)
