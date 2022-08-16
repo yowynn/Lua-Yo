@@ -5,7 +5,6 @@
 ---@usage:
 --[[ --
     local event = require("event")
-    local timer = require("timer")
     -- # define event
     function event.echo(...)
         local from = event.from()
@@ -13,7 +12,7 @@
     end
     -- # local call event
     event().from("Holder_A").echo("hello")
-    event().from("Holder_B").delay(3, 10).echo("hello")
+    event().from("Holder_B").echo("hello")
     -- # net test
     local net = require("net")
     local dump = require("table_dump")
@@ -34,7 +33,7 @@
         -- #client side:
         local client = net.connect("127.0.0.1", 1234, function(client)
             regevent(client)
-            event(client).delay(2, 5).OpenNotepad()
+            event(client).OpenNotepad()
         end, print)
     elseif mode == "server" then
         -- #server side:
@@ -48,11 +47,9 @@
     end
     while true do
         net.update()
-        timer.update()
     end
 --]] --
 ---@dependencies
-local timer = require("timer")
 local assert = assert
 local error = error
 local rawset = rawset
@@ -155,8 +152,6 @@ function module._buildContext()
     function context._clear()
         context._ctx_from_holder = nil
         context._ctx_to_handler = nil
-        context._ctx_delay = nil
-        context._ctx_repeat = nil
     end
 
     --- manual set event from
@@ -185,13 +180,6 @@ function module._buildContext()
         return _context
     end
 
-    --- set event delay
-    function context.delay(delay_sec, repeat_sec)
-        context._ctx_delay = delay_sec and delay_sec > 0 and delay_sec or nil
-        context._ctx_repeat = repeat_sec and repeat_sec > 0 and repeat_sec or nil
-        return _context
-    end
-
     _context = setmetatable({
         from = context.from,
         to = context.to,
@@ -200,17 +188,9 @@ function module._buildContext()
         __index = function(t, k)
             local proxy = function(...)
                 local holder = context._ctx_from_holder
-                local delay_sec = context._ctx_delay
-                local repeat_sec = context._ctx_repeat
                 local eventHandler = context._ctx_to_handler or module._local(holder)
                 context._clear()
-                if delay_sec then
-                    return timer.start(delay_sec, repeat_sec, function(...)
-                        eventHandler(k, ...)
-                    end, ...)
-                else
-                    return eventHandler(k, ...)
-                end
+                return eventHandler(k, ...)
             end
             rawset(t, k, proxy)
             return proxy

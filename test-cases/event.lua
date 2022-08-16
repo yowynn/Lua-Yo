@@ -1,5 +1,4 @@
 local event = require("event")
-local timer = require("timer")
 -- # define event
 function event.echo(...)
     local from = event.from()
@@ -7,7 +6,7 @@ function event.echo(...)
 end
 -- # local call event
 event().from("Holder_A").echo("hello")
-event().from("Holder_B").delay(3, 10).echo("hello")
+event().from("Holder_B").echo("hello")
 -- # net test
 local net = require("net")
 local dump = require("table_dump")
@@ -28,7 +27,7 @@ if mode == "client" then
     -- #client side:
     local client = net.connect("127.0.0.1", 1234, function(client)
         regevent(client)
-        event(client).delay(2, 5).OpenNotepad()
+        event(client).OpenNotepad()
     end, print)
 elseif mode == "server" then
     -- #server side:
@@ -42,5 +41,4 @@ elseif mode == "server" then
 end
 while true do
     net.update()
-    timer.update()
 end
