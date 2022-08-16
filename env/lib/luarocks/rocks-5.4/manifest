@@ -1,5 +1,26 @@
 commands = {}
 dependencies = {
+   dkjson = {
+      ["2.6-1"] = {
+         {
+            constraints = {
+               {
+                  op = ">=",
+                  version = {
+                     5, 1, string = "5.1"
+                  }
+               },
+               {
+                  op = "<",
+                  version = {
+                     5, 5, string = "5.5"
+                  }
+               }
+            },
+            name = "lua"
+         }
+      }
+   },
    luasocket = {
       ["3.1.0-1"] = {
          {
@@ -32,6 +53,9 @@ dependencies = {
    }
 }
 modules = {
+   dkjson = {
+      "dkjson/2.6-1"
+   },
    ltn12 = {
       "luasocket/3.1.0-1"
    },
@@ -70,6 +94,18 @@ modules = {
    }
 }
 repository = {
+   dkjson = {
+      ["2.6-1"] = {
+         {
+            arch = "installed",
+            commands = {},
+            dependencies = {},
+            modules = {
+               dkjson = "dkjson.lua"
+            }
+         }
+      }
+   },
    luasocket = {
       ["3.1.0-1"] = {
          {
