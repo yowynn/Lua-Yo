@@ -81,7 +81,12 @@ function module.reg(holder, sendHandler)
         if not module._holder_map[holder] then
             return
         end
-        return module._invoke(holder, eventName, ...)
+        local data, err = module._invoke(holder, eventName, ...)
+        if err then
+            print("[event]invoke error", err)
+        else
+            return data
+        end
     end
     module._holder_map[holder] = {
         send = sendHandler,

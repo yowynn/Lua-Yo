@@ -18,7 +18,7 @@ local function regevent(client)
     local recv = event.reg(client, send)
     client:onRecv(function(client, message)
         local args = load("return " .. message)()
-        recv(table.unpack(args))
+        return recv(table.unpack(args))
     end)
 end
 local m = ...
