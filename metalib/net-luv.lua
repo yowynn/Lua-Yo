@@ -1,6 +1,6 @@
 #!/usr/bin/env lua5.4
 
---- the net module (via lua-uv)
+--- the net module (via luv)
 ---@author: Wynn Yo 2022-08-12 19:01:08
 ---@usage:
 --[[ --

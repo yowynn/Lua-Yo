@@ -9,9 +9,6 @@ timer.start(20, nil, function(msg, ...)
     end
     print(msg)
 end, "the end", t1, t2)
-local lastTime = os.time()
 while true do
-    local now = os.time()
-    timer.update(now - lastTime)
-    lastTime = now
+    timer.update()
 end

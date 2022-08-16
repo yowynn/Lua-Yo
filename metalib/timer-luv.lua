@@ -1,6 +1,6 @@
 #!/usr/bin/env lua5.4
 
---- the timer module (LUV)
+--- the timer module (via luv)
 ---@author: Wynn Yo 2022-06-22 14:53:35
 ---@usage:
 --[[ --
@@ -15,11 +15,8 @@
         end
         print(msg)
     end, "the end", t1, t2)
-    local lastTime = os.time()
     while true do
-        local now = os.time()
-        timer.update(now - lastTime)
-        lastTime = now
+        timer.update()
     end
 --]] --
 ---@dependencies
@@ -41,22 +38,25 @@ function module.start(timeout_sec, interval_sec, callback, ...)
     handler:start(timeout_sec * 1000, interval_sec * 1000, function()
         callback(table_unpack(callargs, 1, callargs.n))
     end)
-    return setmetatable({
-        handler = handler,
+    local t = setmetatable({
         timeout = timeout_sec,
         interval = interval_sec,
+        callback = callback,
+        callargs = callargs,
+        _ctx_handler = handler,
     }, module)
+    return t
 end
 
 function module:stop()
-    local handler = self and self.handler
+    local handler = self and self._ctx_handler
     if not handler then
         return
     end
     handler:stop()
 end
 
-function module.update(interval_sec)
+function module.update()
     luv.run("nowait")
 end
 
