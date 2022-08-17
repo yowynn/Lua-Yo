@@ -157,15 +157,6 @@ function module._buildContext()
 
     context._NOCALL_FUNC = function() end
 
-    context._NOCALL = setmetatable({}, {
-        __index = function(t, k)
-            return context._NOCALL_FUNC
-        end,
-        __newindex = function(t, k, v)
-            error("[event]NOCALL is readonly")
-        end
-    })
-
     function context._clear()
         context._ctx_from_holder = nil
         context._ctx_to_handler = nil
@@ -178,12 +169,14 @@ function module._buildContext()
     end
 
     function context._to_mono(holder)
-        context._ctx_to_handler = module._sender(holder)
+        assert(not context._ctx_to_handler, "[event]target is already set")
+        context._ctx_to_handler = module._sender(holder) or context._NOCALL_FUNC
         return _context
     end
 
     --- set event to
     function context.to(holder_s, isMulticast)
+        assert(not context._ctx_to_handler, "[event]target is already set")
         if isMulticast then
             --- cautious to use this, message encode multi-times
             context._ctx_to_handler = function(eventName, ...)
@@ -198,7 +191,8 @@ function module._buildContext()
     end
 
     function context.nocall()
-        return context._NOCALL
+        assert(not context._ctx_to_handler, "[event]target is already set")
+        context._ctx_to_handler = context._NOCALL_FUNC
     end
 
     _context = setmetatable({
