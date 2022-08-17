@@ -24,7 +24,7 @@
         local recv = event.reg(client, send)
         client:onRecv(function(client, message)
             local args = load("return " .. message)()
-            recv(table.unpack(args))
+            return recv(table.unpack(args))
         end)
     end
     local m = ...
@@ -154,6 +154,18 @@ end
 function module._buildContext()
     local context = {}
     local _context = context
+
+    context._NOCALL_FUNC = function() end
+
+    context._NOCALL = setmetatable({}, {
+        __index = function(t, k)
+            return context._NOCALL_FUNC
+        end,
+        __newindex = function(t, k, v)
+            error("[event]NOCALL is readonly")
+        end
+    })
+
     function context._clear()
         context._ctx_from_holder = nil
         context._ctx_to_handler = nil
@@ -185,9 +197,14 @@ function module._buildContext()
         return _context
     end
 
+    function context.nocall()
+        return context._NOCALL
+    end
+
     _context = setmetatable({
         from = context.from,
         to = context.to,
+        nocall = context.nocall,
     }, {
         __index = function(t, k)
             local proxy = function(...)
