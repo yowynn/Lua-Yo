@@ -1,9 +1,9 @@
 #!/usr/bin/env lua5.4
 
---- the event module (use for rpc or local call)
+--- event: the event module for rpc or local call
 ---@author: Wynn Yo 2022-08-15 16:37:56
----@usage:
---[[ --
+-- # USAGE
+--[[ -----------------------------------------------------------
     local event = require("event")
     -- # define event
     function event.echo(...)
@@ -48,8 +48,9 @@
     while true do
         net.update()
     end
---]] --
----@dependencies
+--]] -----------------------------------------------------------
+-- # DEPENDENCIES
+local module = {}
 local assert = assert
 local error = error
 local rawset = rawset
@@ -58,17 +59,17 @@ local print = print
 local setmetatable = setmetatable
 local tostring = tostring
 
+-- # STATIC_CONFIG_DEFINITION
 
----@class event
-local module = {}
+-- # CONTEXT_VALUE_DEFINITION
 
+module._current_holder = nil
 --- the map of registered event
 module._event_map = nil
-
 --- the map of registered holder
 module._holder_map = nil
 
-module._current_holder = nil
+-- # METHODS_DEFINITION
 
 --- reg a holder
 ---@param holder any
@@ -155,7 +156,8 @@ function module._buildContext()
     local context = {}
     local _context = context
 
-    context._NOCALL_FUNC = function() end
+    context._NOCALL_FUNC = function()
+    end
 
     function context._clear()
         context._ctx_from_holder = nil
@@ -224,24 +226,37 @@ function module._buildContext()
     end
 end
 
-local function module_initializer()
-    module._current_holder = nil
-    module._holder_map = setmetatable({}, {__mode = "k"})
-    module._event_map = {
-        call = module.event_call,
-        info = module.event_info,
-    }
+-- # WRAP_MODULE
 
-    local static = setmetatable({
+local function module_initializer()
+    -- # STATIC_CONFIG_INIT
+
+    -- # CONTEXT_VALUE_INIT
+
+    module._current_holder = nil
+    module._event_map = {}
+    module._holder_map = setmetatable({}, {
+        __mode = "k",
+    })
+
+    -- # MODULE_EXPORT
+
+    ---@class event @the event module for rpc or local call
+    local event = {
         reg = module.reg,
         unreg = module.unreg,
         from = module.from,
-    }, {
-        __call = module._buildContext(),
+    }
+    setmetatable(event, {
         __index = module._event_map,
         __newindex = module._event_map,
+        __call = module._buildContext(),
     })
-    return static
+    --- default event define
+    event.call = module.event_call
+    event.info = module.event_info
+
+    return event
 end
 
 return module_initializer()

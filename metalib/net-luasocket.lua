@@ -1,9 +1,9 @@
 #!/usr/bin/env lua5.4
 
---- the net module (via luasocket)
+--- net: the net module (via luasocket)
 ---@author: Wynn Yo 2022-06-24 10:18:31
----@usage:
---[[ --
+-- # USAGE
+--[[ -----------------------------------------------------------
     local net = require("net")
     local mode = "client" or "server"
     if mode == "client" then
@@ -32,9 +32,9 @@
     while true do
         net.update()
     end
---]] --
-
----@dependencies
+--]] -----------------------------------------------------------
+-- # DEPENDENCIES
+local module = {}
 local socket = require("socket") -- @https://lunarmodules.github.io/luasocket/
 local assert = assert
 local pairs = pairs
@@ -48,11 +48,12 @@ local math_floor = math.floor
 local os_time = os.time
 local string_char = string.char
 
----@class net
-local module = {}
+-- # STATIC_CONFIG_DEFINITION
 
 --- default backlog
 module.DEFAULT_BACKLOG = nil
+
+-- # CONTEXT_VALUE_DEFINITION
 
 --- map to hold server objects
 module._server_objects = nil
@@ -61,6 +62,8 @@ module._server_objects = nil
 module._client_objects = nil
 
 module.__index = nil
+
+-- # METHODS_DEFINITION
 
 function module._new(_socket)
     local self = {}
@@ -314,11 +317,19 @@ function module:close(reason)
     end
 end
 
+-- # WRAP_MODULE
+
 local function module_initializer()
-    module._server_objects = {}
-    module._client_objects = {}
+    -- # STATIC_CONFIG_INIT
+
     --- dafault backlog
     module.DEFAULT_BACKLOG = 128
+
+    -- # CONTEXT_VALUE_INIT
+
+    module._server_objects = {}
+    module._client_objects = {}
+
     --- instance methods
     module.__index = {
         mark = module.mark,
@@ -329,14 +340,17 @@ local function module_initializer()
         getCreatedTime = module.getCreatedTime,
         getLastAccessTime = module.getLastAccessTime,
     }
-    --- static methods
-    local static = {
+
+    -- # MODULE_EXPORT
+
+    ---@class net @the net module (via luasocket)
+    local net = {
         listen = module.listen,
         connect = module.connect,
         update = module.update,
         close = module.close,
     }
-    return static
+    return net
 end
 
 return module_initializer()

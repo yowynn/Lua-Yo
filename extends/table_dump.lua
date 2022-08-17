@@ -1,8 +1,11 @@
 #!/usr/bin/env lua5.4
 
---- dump table to string
+local DEFINE_EXPAND_TO_TABLE = true -- expand to table
+
+--- table.dump: dump table to string
 ---@author: Wynn Yo 2022-06-02 10:26:53
----@dependencies
+-- # DEPENDENCIES
+local module = {}
 local getmetatable = getmetatable
 local ipairs = ipairs
 local pairs = pairs
@@ -11,8 +14,7 @@ local type = type
 local math_huge = math.huge
 local table_sort = table.sort
 
-
-local module = {}
+-- # STATIC_CONFIG_DEFINITION
 
 module.LITERAL_INDENT = nil
 module.LITERAL_NEWLINE = nil
@@ -20,8 +22,12 @@ module.LITERAL_FOLDING_TAG = nil
 module.DEFAULT_VERBOSE = nil
 module.DEFAULT_DEPTH_LIMIT = nil
 
+-- # CONTEXT_VALUE_DEFINITION
+
 module._ctx_verbose = nil
 module._ctx_depth_limit = nil
+
+-- # METHODS_DEFINITION
 
 function module._dumpTable(t, depth)
     depth = (depth or 0) + 1
@@ -32,7 +38,8 @@ function module._dumpTable(t, depth)
     s = s .. module.LITERAL_NEWLINE
     local vkpairs = {}
     for k, v in pairs(t) do
-        vkpairs[#vkpairs + 1] = module.LITERAL_INDENT:rep(depth) .. module._dumpTableKey(k, depth) .. " = " .. module._dumpTableValue(v, depth)
+        vkpairs[#vkpairs + 1] = module.LITERAL_INDENT:rep(depth) .. module._dumpTableKey(k, depth) .. " = " ..
+                                    module._dumpTableValue(v, depth)
     end
     table_sort(vkpairs)
     for _, v in ipairs(vkpairs) do
@@ -45,7 +52,8 @@ function module._dumpTable(t, depth)
     if module._ctx_verbose then
         local mt = getmetatable(t)
         if mt then
-            s = s .. module.LITERAL_INDENT:rep(depth) .. ".metatable = " .. module._dumpTable(mt, depth) .. module.LITERAL_NEWLINE
+            s = s .. module.LITERAL_INDENT:rep(depth) .. ".metatable = " .. module._dumpTable(mt, depth) ..
+                    module.LITERAL_NEWLINE
         end
     end
     s = s .. module.LITERAL_INDENT:rep(depth - 1) .. "}"
@@ -122,22 +130,29 @@ function module.dump(t, verbose, depth)
     return s
 end
 
+-- # WRAP_MODULE
+
 local function module_initializer()
+    -- # STATIC_CONFIG_INIT
+
     module.LITERAL_INDENT = "\t"
     module.LITERAL_NEWLINE = "\n"
     module.LITERAL_FOLDING_TAG = "..."
     module.DEFAULT_VERBOSE = true
     module.DEFAULT_DEPTH_LIMIT = math_huge
 
-    return module.dump
+    -- # CONTEXT_VALUE_INIT
+
+    -- # MODULE_EXPORT
+    local table_dump = module.dump
+    return table_dump
 end
 
--- [[  extend table.dump
-if table and not table.dump then
-    local dump = module_initializer()
-    table.dump = dump
+if DEFINE_EXPAND_TO_TABLE then
+    if table and not table.dump then
+        local table_dump = module_initializer()
+        table.dump = table_dump
+    end
 end
--- ]]
-
 
 return module_initializer()

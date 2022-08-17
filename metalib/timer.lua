@@ -1,2 +1,2 @@
--- return require("timer-luv")
 return require("timer-luasocket")
+-- return require("timer-luv")

@@ -1,9 +1,9 @@
 #!/usr/bin/env lua5.4
 
---- the timer module (via luasocket)
+--- timer: the timer module (via luasocket)
 ---@author: Wynn Yo 2022-08-16 10:37:54
----@usage:
---[[ --
+-- # USAGE:
+--[[ -----------------------------------------------------------
     local timer = require("timer")
     local t1 = timer.start(2, 2, print, "hello22")
     local t2 = timer.start(4, 1, print, "hello41")
@@ -18,15 +18,17 @@
     while true do
         timer.update()
     end
---]] --
----@dependencies
+--]] -----------------------------------------------------------
+-- # DEPENDENCIES
+local module = {}
 local socket = require("socket") -- @https://lunarmodules.github.io/luasocket/
 local setmetatable = setmetatable
 local table_pack = table.pack
 local table_unpack = table.unpack
 
----@class timer
-local module = {}
+-- # STATIC_CONFIG_DEFINITION
+
+-- # CONTEXT_VALUE_DEFINITION
 
 --- the timers to update
 module._updating_timers = nil
@@ -35,6 +37,8 @@ module._updating_timers = nil
 module._ctx_deleting_timers = nil
 
 module.__index = nil
+
+-- # METHODS_DEFINITION
 
 function module.start(timeout_sec, interval_sec, callback, ...)
     timeout_sec = timeout_sec and timeout_sec > 0 and timeout_sec or 0
@@ -77,19 +81,29 @@ function module.update()
     end
 end
 
+-- # WRAP_MODULE
+
 local function module_initializer()
+    -- # STATIC_CONFIG_INIT
+
+    -- # CONTEXT_VALUE_INIT
+
     module._updating_timers = {}
     module._ctx_deleting_timers = {}
-
     module.__index = {
-        stop = module.stop
+        stop = module.stop,
     }
-    local static = {
+
+    -- # MODULE_EXPORT
+
+    ---@class timer @the timer module (via luasocket)
+    local timer = {
         start = module.start,
         stop = module.stop,
-        update = module.update
+        update = module.update,
     }
-    return static
+
+    return timer
 end
 
 return module_initializer()

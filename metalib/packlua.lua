@@ -1,31 +1,36 @@
 #!/usr/bin/env lua5.4
 
---- pack a muiti-file lua project to a single lua file
+local DEFINE_REQUIRE_AS_COMMAND = true -- require as command
+
+--- packlua: pack a muiti-file lua project to a single lua file
 ---@author: Wynn Yo 2022-08-04 16:46:54
----@usage:
---[[ --
+-- # USAGE:
+--[[ -----------------------------------------------------------
     1. copy `packlua.lua` to your project root
     2. run:
         lua packlua.lua path/to/entry.lua  path/to/output.lua
-]] --
----@dependencies
+--]] -----------------------------------------------------------
+-- # DEPENDENCIES
+local module = {}
 local error = error
 local print = print
 local tostring = tostring
 local io_open = io.open
 local table_concat = table.concat
 
----@class packlua
-local module = {}
+-- # STATIC_CONFIG_DEFINITION
 
 --- the global module name of the out file (It doesn't matter what it is)
 module._TEMPLATE_NAME = "_GLOBAL_MOD_"
 
+-- # CONTEXT_VALUE_DEFINITION
+
 --- the patterns to find out "require" statement
 module._require_patterns = nil
-
 module._ctx_pieces = nil
 module._ctx_require_map = nil
+
+-- # METHODS_DEFINITION
 
 function module._readLua(path)
     local f = io_open(path, "rb")
@@ -103,7 +108,7 @@ function module._pushRequiremap(_MOD_NAME_, _MOD_CONTENT_)
     local piece = module._greplace(module._TEMPLATE_REQUIREMAP, {
         _MOD_NAME_ = _MOD_NAME_,
         _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_),
-        _MOD_CONTENT_ = _MOD_CONTENT_
+        _MOD_CONTENT_ = _MOD_CONTENT_,
     })
     module._pushPiece(piece)
 end
@@ -132,7 +137,7 @@ function module._pushLuafileRecursive(path)
         piece = piece:gsub(pattern, function(prefix, _MOD_NAME_)
             module._pushLuafileRecursive(_MOD_NAME_)
             return prefix .. module._greplace(module._TEMPLATE_LOCALREQUIRE, {
-                _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_)
+                _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_),
             })
         end)
     end
@@ -145,7 +150,7 @@ return _GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)
 ]=]
 function module._push_tail(_MOD_NAME_)
     local piece = module._greplace(module._TEMPLATE_TAIL, {
-        _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_)
+        _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_),
     })
     module._pushPiece(piece)
 end
@@ -154,10 +159,8 @@ end
 --- to find your require and replace it to `packlua`'s require
 function module.AddRequireIdentifier(identifier)
     identifier = identifier:gsub("%.", "%%.")
-    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier ..
-                                                                  "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
-    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier ..
-                                                                  "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
     module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
     module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
 end
@@ -182,7 +185,11 @@ function module.pack(rootLuaPath, toLuaPath)
     module._writeLua(toLuaPath, content)
 end
 
+-- # WRAP_MODULE
+
 local function module_initializer()
+    -- # CONTEXT_VALUE_INIT
+
     module._require_patterns = {}
 
     --- add the Require identifiers
@@ -192,15 +199,19 @@ local function module_initializer()
     --- set global module name, default is "_GLOBAL_MOD_"
     module.SetGlobalName("LOCAL")
 
-    return module.pack
+    -- # MODULE_EXPORT
+    ---@class luapack @pack a muiti-file lua project to a single lua file
+    local packlua = {
+        pack = module.pack,
+    }
 end
 
--- [[  use for command line, and as example
-local _pathToEntry, _pathToOutput = ...
-if _pathToEntry ~= nil and _pathToOutput ~= nil then
-    local pack = module_initializer()
-    pack(_pathToEntry, _pathToOutput)
+if DEFINE_REQUIRE_AS_COMMAND then
+    local _pathToEntry, _pathToOutput = ...
+    if _pathToEntry ~= nil and _pathToOutput ~= nil then
+        local pack = module_initializer()
+        pack(_pathToEntry, _pathToOutput)
+    end
 end
--- ]]
 
 return module_initializer()
