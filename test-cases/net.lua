@@ -1,5 +1,5 @@
 local m = ...
-local mode = m == "c" and "client" or "server"
+local mode = m == "c" and "client" or m == "s" and "server" or nil
 print("start net test: " .. mode)
 
 local net = require("net")

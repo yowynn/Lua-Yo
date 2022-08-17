@@ -7,6 +7,8 @@ end
 -- # local call event
 event().from("Holder_A").echo("hello")
 event().from("Holder_B").echo("hello")
+event(nil).from("Holder_B").echo("hello-never")
+
 -- # net test
 local net = require("net")
 local dump = require("table_dump")
@@ -22,7 +24,7 @@ local function regevent(client)
     end)
 end
 local m = ...
-local mode = m == "c" and "client" or "s" and "server"
+local mode = m == "c" and "client" or m == "s" and "server" or nil
 if mode == "client" then
     -- #client side:
     local client = net.connect("127.0.0.1", 1234, function(client)

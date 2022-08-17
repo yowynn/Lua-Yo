@@ -214,9 +214,10 @@ function module._buildContext()
             error("[event]context is readonly")
         end,
     })
-    return function(_, holder)
-        if holder then
-            return context._to_mono(holder)
+    return function(_, ...)
+        context._clear()
+        if select("#", ...) > 0 then
+            return context._to_mono(...)
         else
             return _context
         end
