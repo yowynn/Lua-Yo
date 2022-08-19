@@ -1,5 +1,3 @@
-#!/usr/bin/env lua5.4
-
 --- timer: the timer module (via luasocket)
 ---@author: Wynn Yo 2022-08-16 10:37:54
 -- # USAGE:

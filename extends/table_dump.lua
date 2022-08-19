@@ -1,5 +1,3 @@
-#!/usr/bin/env lua5.4
-
 local DEFINE_EXPAND_TO_TABLE = true -- expand to table
 
 --- table.dump: dump table to string

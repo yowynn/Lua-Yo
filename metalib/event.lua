@@ -1,5 +1,3 @@
-#!/usr/bin/env lua5.4
-
 --- event: the event module for rpc or local call
 ---@author: Wynn Yo 2022-08-15 16:37:56
 -- # USAGE

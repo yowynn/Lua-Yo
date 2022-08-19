@@ -1,5 +1,3 @@
-#!/usr/bin/env lua5.4
-
 local DEFINE_REQUIRE_AS_COMMAND = true -- require as command
 
 --- packlua: pack a muiti-file lua project to a single lua file
@@ -159,10 +157,10 @@ end
 --- to find your require and replace it to `packlua`'s require
 function module.AddRequireIdentifier(identifier)
     identifier = identifier:gsub("%.", "%%.")
-    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
-    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*%(%s*[\"']([%w/%._]+)[\"']%s*%)"
-    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
-    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*[\"']([%w/%._]+)[\"']"
+    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*%(%s*[\"']([%w/%._%-]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*%(%s*[\"']([%w/%._%-]+)[\"']%s*%)"
+    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*[\"']([%w/%._%-]+)[\"']"
+    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*[\"']([%w/%._%-]+)[\"']"
 end
 
 --- [optional] set global module name, default is "_GLOBAL_MOD_"
@@ -204,13 +202,15 @@ local function module_initializer()
     local packlua = {
         pack = module.pack,
     }
+
+    return packlua
 end
 
 if DEFINE_REQUIRE_AS_COMMAND then
     local _pathToEntry, _pathToOutput = ...
     if _pathToEntry ~= nil and _pathToOutput ~= nil then
-        local pack = module_initializer()
-        pack(_pathToEntry, _pathToOutput)
+        local packlua = module_initializer()
+        packlua.pack(_pathToEntry, _pathToOutput)
     end
 end
 

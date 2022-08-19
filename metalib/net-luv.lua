@@ -1,5 +1,3 @@
-#!/usr/bin/env lua5.4
-
 --- net: the net module (via luv)
 ---@author: Wynn Yo 2022-08-12 19:01:08
 -- # USAGE

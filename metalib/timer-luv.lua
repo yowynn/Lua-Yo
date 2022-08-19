@@ -1,5 +1,3 @@
-#!/usr/bin/env lua5.4
-
 --- timer: the timer module (via luv)
 ---@author: Wynn Yo 2022-06-22 14:53:35
 -- # USAGE:

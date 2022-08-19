@@ -1,5 +1,3 @@
-#!/usr/bin/env lua5.4
-
 --- net: the net module (via luasocket)
 ---@author: Wynn Yo 2022-06-24 10:18:31
 -- # USAGE
