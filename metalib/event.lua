@@ -193,6 +193,7 @@ function module._buildContext()
     function context.nocall()
         assert(not context._ctx_to_handler, "[event]target is already set")
         context._ctx_to_handler = context._NOCALL_FUNC
+        return _context
     end
 
     _context = setmetatable({
