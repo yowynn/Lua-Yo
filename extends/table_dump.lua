@@ -34,14 +34,17 @@ function module._dumpTable(t, depth)
         s = s .. " " .. module._dumpOriginal(t, false)
     end
     s = s .. module.LITERAL_NEWLINE
-    local vkpairs = {}
+    local sortkeys = {}
     for k, v in pairs(t) do
-        vkpairs[#vkpairs + 1] = module.LITERAL_INDENT:rep(depth) .. module._dumpTableKey(k, depth) .. " = " ..
-                                    module._dumpTableValue(v, depth)
+        sortkeys[#sortkeys + 1] = k
     end
-    table_sort(vkpairs)
-    for _, v in ipairs(vkpairs) do
-        s = s .. v
+    table_sort(sortkeys, module._sort)
+    local vkpairs = {}
+    for i, k in pairs(sortkeys) do
+        local v = t[k]
+        local kvstr = module.LITERAL_INDENT:rep(depth) .. module._dumpTableKey(k, depth) .. " = " ..
+                                    module._dumpTableValue(v, depth)
+        s = s .. kvstr
         if not module._ctx_verbose then
             s = s .. ","
         end
@@ -113,6 +116,28 @@ function module._dumpAll(t, depth)
         return module._dumpBoolean(t, depth)
     else
         return module._dumpOriginal(t, false)
+    end
+end
+
+function module._typeindex(k)
+    local t = type(k)
+    if t == "number" then
+        return 1
+    end
+    if t == "string" then
+        return 2
+    end
+    if t == "table" then
+        return 4
+    end
+    return 3
+end
+
+function module._sort(a, b)
+    if module._typeindex(a) == module._typeindex(b) then
+        return a < b
+    else
+        return module._typeindex(a) < module._typeindex(b)
     end
 end
 
