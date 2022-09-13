@@ -87,6 +87,7 @@ local function module_initializer(filterK)
             end
         end
     end
+    return string
 end
 
 return module_initializer(function(k)
