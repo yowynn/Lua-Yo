@@ -46,9 +46,10 @@ function module.show(list)
     local columnsep = "  "
     local widths = {}
     local showlist = {}
-    for idx, item in ipairs(list) do
+    local xpairs = module.isArray(list) and ipairs or pairs
+    for idx, item in xpairs(list) do
         local showitem = {}
-        showlist[idx] = showitem
+        showlist[#showlist + 1] = showitem
         for i, column in pairs(module._ctx_columns) do
             local key = column.key
             local val = item[key] ~= nil and (column.handler or tostring)(item[key])
@@ -141,6 +142,18 @@ function module.width(s, w1, w2, w3, w4)
     local width = n1 * w1 + n2 * w2 + n3 * w3 + n4 * w4
     return width
 end
+
+function module.isArray(tb)
+    local i = 1
+    for _ in pairs(tb) do
+        if tb[i] == nil then
+            return false
+        end
+        i = i + 1
+    end
+    return true
+end
+
 
 -- # WRAP_MODULE
 local function module_initializer()

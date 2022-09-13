@@ -119,27 +119,43 @@ function module._dumpAll(t, depth)
     end
 end
 
-function module._typeindex(k)
-    local t = type(k)
+function module._typevalue(o)
+    local t = type(o)
+    if t == "boolean" then
+        return 1, o and 1 or 0
+    end
     if t == "number" then
-        return 1
+        return 2, o
     end
     if t == "string" then
-        return 2
+        return 3, o
+    end
+    if t == "function" then
+        return 4, tostring(o)
+    end
+    if t == "userdata" then
+        return 5, tostring(o)
+    end
+    if t == "thread" then
+        return 6, tostring(o)
     end
     if t == "table" then
-        return 4
+        return 7, tostring(o)
     end
-    return 3
+    return 8, tostring(o)
 end
 
+
 function module._sort(a, b)
-    if module._typeindex(a) == module._typeindex(b) then
-        return a < b
+    local ta, va = module._typevalue(a)
+    local tb, vb = module._typevalue(b)
+    if ta == tb then
+        return va < vb
     else
-        return module._typeindex(a) < module._typeindex(b)
+        return ta < tb
     end
 end
+
 
 --- Dump a table to a string.
 ---@param t table|any @table / target to dump
