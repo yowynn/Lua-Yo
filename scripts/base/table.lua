@@ -259,17 +259,37 @@ end
 ---@vararg (fun(a:any,b:any):boolean,boolean) @the other compare functions
 ---@return (fun(a:any,b:any):boolean,boolean) @the combined compare function, the first return value is the compare result, the second return value is true if the two values are equal
 function M.comp_combine(comp1, comp2, ...)
-    if select("#", ...) == 0 then
-        return function(a, b)
-            local r1, e1 = comp1(a, b)
-            if e1 then return comp2(a, b) end
-            return r1, false
-        end
-    else
-        return function(a, b)
-            local r1, e1 = comp1(a, b)
-            if e1 then return M.comp_combine(comp2, ...) (a, b) end
-            return r1, false
-        end
+    if select("#", ...) > 0 then
+        comp2 = M.comp_combine(comp2, ...)
+    end
+    return function(a, b)
+        local r1, e1 = comp1(a, b)
+        if e1 then return comp2(a, b) end
+        return r1, false
     end
 end
+
+--- traverse a table, but just select given keys in given order
+---@param t table @the table to traverse
+---@param _klist any[] @optional, the key list, default is the key list of the table
+---@param _comp (fun(a:any,b:any):boolean,boolean) @optional, the compare function to generate the key list, if present, force to generate the key list
+---@return fun():any,any @the iterator function, the first return value is the key, the second return value is the value
+---@return table @the table to traverse
+---@return any @the current key
+function M.pairs_selected(t, _klist, _comp)
+    local klist = _klist
+    local comp = _comp
+    if not klist or comp then
+        klist = M.keys(t, M.clear(klist or {}))
+        table.sort(klist, comp)
+    end
+    local i = 0
+    return function()
+        i = i + 1
+        local k = klist[i]
+        if k == nil then return nil end
+        return k, t[k]
+    end, t, nil
+end
+
+return M
