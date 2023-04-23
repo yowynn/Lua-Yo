@@ -5,7 +5,7 @@ rock_manifest = {
       ["docs.md"] = "a9b8ca8c557bb5e5627059595c3ed5f0"
    },
    lib = {
-      ["luv.dll"] = "e2e0c11b833f6712d2364ecc28c27b01"
+      ["luv.dll"] = "ee5eb987d3ca21c47fff297c11c61a35"
    },
-   ["luv-1.44.2-0.rockspec"] = "4968c02cb984910efcd9639723614dce"
+   ["luv-1.44.2-1.rockspec"] = "2a736e4838c9bba54d0031ffd4497317"
 }

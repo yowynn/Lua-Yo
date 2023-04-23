@@ -1,5 +1,5 @@
 package = "luv"
-version = "1.44.2-0"
+version = "1.44.2-1"
 source = {
   url = 'https://github.com/luvit/luv/releases/download/'..version..'/luv-'..version..'.tar.gz'
 }

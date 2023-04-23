@@ -36,10 +36,10 @@ rock_manifest = {
    },
    lib = {
       mime = {
-         ["core.dll"] = "c7e3b7dd1488177a46c516f86fc4abff"
+         ["core.dll"] = "b3cbfa31dd75abdd2d21a9da2bf8cb78"
       },
       socket = {
-         ["core.dll"] = "f6f9ecf1d712120f2890b510b89427cd"
+         ["core.dll"] = "4aca9ab97c198d71099fe20e0534d1b2"
       }
    },
    lua = {
