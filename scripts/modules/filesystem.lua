@@ -7,6 +7,9 @@ local lfs = require("lfs") -- @https://lunarmodules.github.io/luafilesystem/
 -- # MODULE_DEFINITION
 local M = {}
 
+--- path separator
+M.PATH_SEPARATOR = package.config:sub(1, 1)
+
 --- split a path into dir, name, extention
 --- e.g. "`D:/test/example.txt`" -> "`D:/test/`", "`example`", "`.txt`", `false`
 ---@param path string @the path to split
@@ -24,6 +27,41 @@ function M.splitPath(path, splitExt)
     else
         return dir, nameWithExt, "", isDir
     end
+end
+
+--- combine paths
+---@param path1 string @the first path
+---@param path2 string @the second path
+---@vararg string @the rest paths
+---@return string @the combined path
+function M.combinePath(path1, path2, ...)
+    if select("#", ...) > 0 then
+        path2 = M.combinePath(path2, ...)
+    end
+    path1 = path1:gsub("[\\/]+$", "")
+    return path1 .. M.PATH_SEPARATOR .. path2
+end
+
+--- check path validity at multi-platforms
+---@param path string @the path to check
+---@return boolean|string @pretty path if valid, otherwise false
+---@return string @the error message if invalid
+function M.checkPath(path)
+    -- make path pretty and match the platform
+    path = path:gsub("[\\/]+", M.PATH_SEPARATOR)
+    path = path:gsub("^%s+", ""):gsub("%s+$", "")
+    -- check path
+    local invalidChars = "[<>:\"/\\|?*]"
+    if path:match(invalidChars) then
+        return false, "invalid characters"
+    end
+    if path:match("^%s") or path:match("%s$") then
+        return false, "leading or trailing spaces"
+    end
+    if path:match("[\\/]%.$") then
+        return false, "dot at the end of path"
+    end
+    return path
 end
 
 --- get path info
@@ -155,7 +193,7 @@ function M.removeDirectory(path)
     end
     for file in lfs.dir(path) do
         if file ~= "." and file ~= ".." then
-            local filepath = path .. "/" .. file
+            local filepath = M.combinePath(path, file)
             local attr = M.pathInfo(filepath)
             if attr.mode == "directory" then
                 local ok, err = M.removeDirectory(filepath)
@@ -191,6 +229,103 @@ function M.moveDirectory(src, dst)
         return false, err
     end
     return true
+end
+
+--- copy directory
+---@param src string @the source directory path
+---@param dst string @the destination directory path
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.copyDirectory(src, dst)
+    local dir = M.splitPath(dst, false)
+    if dir ~= "" then
+        local ok, err = M.createDirectory(dir)
+        if not ok then
+            return false, err
+        end
+    end
+    local ok, err = M.createDirectory(dst)
+    if not ok then
+        return false, err
+    end
+    for file in lfs.dir(src) do
+        if file ~= "." and file ~= ".." then
+            local srcFile = M.combinePath(src, file)
+            local dstFile = M.combinePath(dst, file)
+            local attr = M.pathInfo(srcFile)
+            if attr.mode == "directory" then
+                local ok, err = M.copyDirectory(srcFile, dstFile)
+                if not ok then
+                    return false, err
+                end
+            else
+                local ok, err = M.copyFile(srcFile, dstFile)
+                if not ok then
+                    return false, err
+                end
+            end
+        end
+    end
+    return true
+end
+
+--- iterate files in directory
+---@param path string @the directory path
+---@param isRecursive boolean @iterate recursively
+---@param containSelf boolean @contain self
+---@param filter fun(path:string, isDirectory:boolean):boolean @the filter function
+---@return (fun():string, boolean) @the iterator, return the file path and is directory
+---@return string[] @the file list
+function M.each(path, isRecursive, containSelf, filter)
+    local filepath = path:gsub("[\\/]+$", "")
+    local list = {}
+    local function _iterate(path)
+        for file in lfs.dir(path) do
+            if file ~= "." and file ~= ".." then
+                local filepath = M.combinePath(path, file)
+                local attr = M.pathInfo(filepath)
+                local isDirectory = attr.mode == "directory"
+                if not filter or filter(filepath, isDirectory) then
+                    if isDirectory then
+                        list[#list+1] = filepath .. M.PATH_SEPARATOR
+                        if isRecursive then
+                            _iterate(filepath)
+                        end
+                    else
+                        list[#list+1] = filepath
+                    end
+                end
+            end
+        end
+    end
+    local attr = M.pathInfo(path)
+    if attr then
+        local isDirectory = attr.mode == "directory"
+        if not filter or filter(filepath, isDirectory) then
+            if containSelf then
+                if isDirectory then
+                    list[#list+1] = filepath .. M.PATH_SEPARATOR
+                else
+                    list[#list+1] = filepath
+                end
+            end
+            if isDirectory then
+                _iterate(filepath)
+            end
+        end
+    end
+    local i = 0
+    return function(list)
+        i = i + 1
+        local path = list[i]
+        if path then
+            if path:sub(-1) == M.PATH_SEPARATOR then
+                return path:sub(1, -2), true
+            else
+                return path, false
+            end
+        end
+    end, list
 end
 
 return M

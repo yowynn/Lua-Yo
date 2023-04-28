@@ -109,3 +109,39 @@ do
     test_removeFile("testbox/filesystem/abc/6.txt")
     test_removeFile("testbox/filesystem/abc/6.txt")
 end-- ]]
+
+--[[ filesystem.copyDirectory
+do
+    print("## TEST: filesystem.copyDirectory")
+    local function test_copyDirectory(src, dst)
+        print(string.format("copy directory: <%s> -> <%s>", src, dst))
+        local ok, err = filesystem.copyDirectory(src, dst)
+        print(string.format("\t%s", ok and "Success" or "Failed"))
+        if not ok then
+            print(string.format("\t%s", err))
+        end
+        print("")
+    end
+    -- some test paths
+    test_copyDirectory("testbox/filesystem", "testbox/filesystem2")
+    -- test_copyDirectory([=[C:\Users\Wynn\Desktop\Pink noise]=], [=[C:\Users\Wynn\Desktop\Pink noise2\test]=])
+end-- ]]
+
+--[[ filesystem.each
+do
+    print("## TEST: filesystem.each")
+    local function test_each(path, isRecursive, containSelf, filter)
+        print(string.format("each: <%s>, %s, %s", path, isRecursive and "recursive" or "non-recursive", containSelf and "contain self" or "not contain self"))
+        for path, isDir in filesystem.each(path, isRecursive, containSelf, filter) do
+            print(string.format("\t%s  -- %s", path, isDir and "Directory" or "File"))
+        end
+        print("")
+    end
+    -- some test paths
+    test_each(".", true, true, function(path, isFolder)
+        if isFolder and path:sub(-4, -1) == ".git" then
+            return false
+        end
+        return true
+    end)
+end-- ]]
