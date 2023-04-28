@@ -46,7 +46,7 @@ do
     test_moveFile("testbox/filesystem/folder3/1.txt", "testbox/filesystem/1/2/3/4.txt")
 end-- ]]
 
--- [[ filesystem.copyFile
+--[[ filesystem.copyFile
 do
     print("## TEST: filesystem.copyFile")
     local function test_copyFile(src, dst)
@@ -62,7 +62,7 @@ do
     test_copyFile("testbox/filesystem/1.txt", "testbox/filesystem/copydir/1.txt")
 end-- ]]
 
--- [[ filesystem.createDirectory / filesystem.createFile
+--[[ filesystem.createDirectory / filesystem.createFile / filesystem.removeDirectory / filesystem.removeFile
 do
     print("## TEST: filesystem.createDirectory / filesystem.createFile")
     local function test_createDirectory(path)
@@ -83,7 +83,29 @@ do
         end
         print("")
     end
+    local function test_removeDirectory(path)
+        print(string.format("remove directory: <%s>", path))
+        local ok, err = filesystem.removeDirectory(path)
+        print(string.format("\t%s", ok and "Success" or "Failed"))
+        if not ok then
+            print(string.format("\t%s", err))
+        end
+        print("")
+    end
+    local function test_removeFile(path)
+        print(string.format("remove file: <%s>", path))
+        local ok, err = filesystem.removeFile(path)
+        print(string.format("\t%s", ok and "Success" or "Failed"))
+        if not ok then
+            print(string.format("\t%s", err))
+        end
+        print("")
+    end
     -- some test paths
     test_createDirectory("testbox/filesystem/a/b")
     test_createFile("testbox/filesystem/abc/6.txt")
+    test_createFile("testbox/filesystem/a/b/你好.txt")
+    test_removeDirectory("testbox/filesystem/a")
+    test_removeFile("testbox/filesystem/abc/6.txt")
+    test_removeFile("testbox/filesystem/abc/6.txt")
 end-- ]]

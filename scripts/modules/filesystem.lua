@@ -34,6 +34,59 @@ function M.pathInfo(path)
     return lfs.attributes(path)
 end
 
+--- create file
+---@param path string @the file path to create
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.createFile(path)
+    local dir, _, _, isDir = M.splitPath(path, false)
+    if isDir then
+        return false, "path is a directory"
+    end
+    local ok, err = M.createDirectory(dir)
+    if not ok then
+        return false, err
+    end
+    local file, err = io.open(path, "w")
+    if not file then
+        return false, err
+    end
+    file:close()
+    return true
+end
+
+--- remove file
+---@param path string @the file path to remove
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.removeFile(path)
+    local ok, err = os.remove(path)
+    if not ok then
+        return false, err
+    end
+    return true
+end
+
+--- move file
+---@param src string @the source file path
+---@param dst string @the destination file path
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.moveFile(src, dst)
+    local dir = M.splitPath(dst, false)
+    if dir ~= "" then
+        local ok, err = M.createDirectory(dir)
+        if not ok then
+            return false, err
+        end
+    end
+    local ok, err = os.rename(src, dst)
+    if not ok then
+        return false, err
+    end
+    return true
+end
+
 --- copy file
 ---@param src string @the source file path
 ---@param dst string @the destination file path
@@ -63,59 +116,6 @@ function M.copyFile(src, dst)
     return true
 end
 
---- move file
----@param src string @the source file path
----@param dst string @the destination file path
----@return boolean @true if success, otherwise false
----@return string @the error message if failed
-function M.moveFile(src, dst)
-    local dir = M.splitPath(dst, false)
-    if dir ~= "" then
-        local ok, err = M.createDirectory(dir)
-        if not ok then
-            return false, err
-        end
-    end
-    local ok, err = os.rename(src, dst)
-    if not ok then
-        return false, err
-    end
-    return true
-end
-
---- remove file
----@param path string @the file path to remove
----@return boolean @true if success, otherwise false
----@return string @the error message if failed
-function M.removeFile(path)
-    local ok, err = os.remove(path)
-    if not ok then
-        return false, err
-    end
-    return true
-end
-
---- create file
----@param path string @the file path to create
----@return boolean @true if success, otherwise false
----@return string @the error message if failed
-function M.createFile(path)
-    local dir, _, _, isDir = M.splitPath(path, false)
-    if isDir then
-        return false, "path is a directory"
-    end
-    local ok, err = M.createDirectory(dir)
-    if not ok then
-        return false, err
-    end
-    local file, err = io.open(path, "w")
-    if not file then
-        return false, err
-    end
-    file:close()
-    return true
-end
-
 --- create directory, recursively
 ---@param path string @the directory path to create
 ---@return boolean @true if success, otherwise false
@@ -140,5 +140,57 @@ function M.createDirectory(path)
     return true
 end
 
+--- remove directory, recursively
+---@param path string @the directory path to remove
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.removeDirectory(path)
+    path = path:gsub("[\\/]+$", "")
+    local attr = M.pathInfo(path)
+    if not attr then
+        return true
+    end
+    if attr.mode ~= "directory" then
+        return false, "path is not a directory"
+    end
+    for file in lfs.dir(path) do
+        if file ~= "." and file ~= ".." then
+            local filepath = path .. "/" .. file
+            local attr = M.pathInfo(filepath)
+            if attr.mode == "directory" then
+                local ok, err = M.removeDirectory(filepath)
+                if not ok then
+                    return false, err
+                end
+            else
+                local ok, err = M.removeFile(filepath)
+                if not ok then
+                    return false, err
+                end
+            end
+        end
+    end
+    return lfs.rmdir(path)
+end
+
+--- move directory
+---@param src string @the source directory path
+---@param dst string @the destination directory path
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.moveDirectory(src, dst)
+    local dir = M.splitPath(dst, false)
+    if dir ~= "" then
+        local ok, err = M.createDirectory(dir)
+        if not ok then
+            return false, err
+        end
+    end
+    local ok, err = os.rename(src, dst)
+    if not ok then
+        return false, err
+    end
+    return true
+end
 
 return M
