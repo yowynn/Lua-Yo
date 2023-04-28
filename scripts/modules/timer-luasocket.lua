@@ -39,7 +39,6 @@ local _deleting_timers = {}
 
 -- # MODULE_DEFINITION
 local M = {}
-M.__index = M
 
 --- start a timer
 ---@param timeout_sec number @the timeout seconds
@@ -103,6 +102,7 @@ end
 
 M.__index = {
     stop = M.stop,
+    rest = M.rest,
 }
 
 return M
