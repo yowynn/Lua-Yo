@@ -269,6 +269,56 @@ function M.copyDirectory(src, dst)
     return true
 end
 
+--- remove file or directory
+---@param path string @the file or directory path
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.remove(path)
+    local attr = M.pathInfo(path)
+    if not attr then
+        return true
+    end
+    if attr.mode == "directory" then
+        return M.removeDirectory(path)
+    else
+        return M.removeFile(path)
+    end
+end
+
+--- move file or directory
+---@param src string @the source file or directory path
+---@param dst string @the destination file or directory path
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.move(src, dst)
+    local attr = M.pathInfo(src)
+    if not attr then
+        return false, "source file or directory not found"
+    end
+    if attr.mode == "directory" then
+        return M.moveDirectory(src, dst)
+    else
+        return M.moveFile(src, dst)
+    end
+end
+
+--- copy file or directory
+---@param src string @the source file or directory path
+---@param dst string @the destination file or directory path
+---@return boolean @true if success, otherwise false
+---@return string @the error message if failed
+function M.copy(src, dst)
+    local attr = M.pathInfo(src)
+    if not attr then
+        return false, "source file or directory not found"
+    end
+    if attr.mode == "directory" then
+        return M.copyDirectory(src, dst)
+    else
+        return M.copyFile(src, dst)
+    end
+end
+
 --- iterate files in directory
 ---@param path string @the directory path
 ---@param isRecursive boolean @iterate recursively
@@ -276,7 +326,7 @@ end
 ---@param filter fun(path:string, isDirectory:boolean):boolean @the filter function
 ---@return (fun():string, boolean) @the iterator, return the file path and is directory
 ---@return string[] @the file list
-function M.each(path, isRecursive, containSelf, filter)
+function M.files(path, isRecursive, containSelf, filter)
     local filepath = path:gsub("[\\/]+$", "")
     local list = {}
     local function _iterate(path)

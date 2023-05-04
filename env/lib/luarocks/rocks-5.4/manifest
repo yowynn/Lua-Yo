@@ -21,6 +21,21 @@ dependencies = {
          }
       }
    },
+   ["lua-iconv"] = {
+      ["7-3"] = {
+         {
+            constraints = {
+               {
+                  op = ">=",
+                  version = {
+                     5, 1, string = "5.1"
+                  }
+               }
+            },
+            name = "lua"
+         }
+      }
+   },
    luafilesystem = {
       ["1.8.0-1"] = {
          {
@@ -71,6 +86,9 @@ modules = {
    dkjson = {
       "dkjson/2.6-1"
    },
+   iconv = {
+      "lua-iconv/7-3"
+   },
    lfs = {
       "luafilesystem/1.8.0-1"
    },
@@ -120,6 +138,18 @@ repository = {
             dependencies = {},
             modules = {
                dkjson = "dkjson.lua"
+            }
+         }
+      }
+   },
+   ["lua-iconv"] = {
+      ["7-3"] = {
+         {
+            arch = "installed",
+            commands = {},
+            dependencies = {},
+            modules = {
+               iconv = "iconv.dll"
             }
          }
       }

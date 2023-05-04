@@ -1,0 +1,10 @@
+rock_manifest = {
+   doc = {
+      COPYING = "2703ed4b4fdac99f8e3092bb2f6b7d3e",
+      README = "fe4d6d064c256bd27061250dcb7cf190"
+   },
+   lib = {
+      ["iconv.dll"] = "f519e713474d9b940b06279830255a61"
+   },
+   ["lua-iconv-7-3.rockspec"] = "0b912a48bc12b19939b80e7434a1329a"
+}
