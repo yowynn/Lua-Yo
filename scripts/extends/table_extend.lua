@@ -1,18 +1,26 @@
 ---@author: Wynn Yo 2023-04-19 18:34:04
 
 -- # DEPENDENCIES
-local error = error
-local pairs = pairs
-local select = select
-local setmetatable = setmetatable
-local table = table
-local tostring = tostring
-local type = type
+assert(_VERSION >= "Lua 5.1", "Lua version >= 5.1 required")
 
 -- # CONSTANTS_DEFINITION
 local METATABLE_WEAKK = { __mode = "k" }
 local METATABLE_WEAKV = { __mode = "v" }
 local METATABLE_WEAKKV = { __mode = "kv" }
+
+-- # PRIVATE_DEFINITION
+
+local function _type_and_value(o)
+    local t = type(o)
+    if t == "boolean" then return 1, o and 1 or 0 end
+    if t == "number" then return 2, o end
+    if t == "string" then return 3, o end
+    if t == "table" then return 4, tostring(o) end
+    if t == "function" then return 5, tostring(o) end
+    if t == "thread" then return 6, tostring(o) end
+    if t == "userdata" then return 7, tostring(o) end
+    return 8, tostring(o)
+end
 
 -- # MODULE_DEFINITION
 local M = table
@@ -195,22 +203,11 @@ end
 function M.comp_complex(_k, _desc)
     local k = _k or nil
     local desc = _desc and true or false
-    local function type_and_value(o)
-        local t = type(o)
-        if t == "boolean" then return 1, o and 1 or 0 end
-        if t == "number" then return 2, o end
-        if t == "string" then return 3, o end
-        if t == "table" then return 4, tostring(o) end
-        if t == "function" then return 5, tostring(o) end
-        if t == "thread" then return 6, tostring(o) end
-        if t == "userdata" then return 7, tostring(o) end
-        return 8, tostring(o)
-    end
     if k == nil then
         if desc then
             return function(a, b)
-                local ta, va = type_and_value(a)
-                local tb, vb = type_and_value(b)
+                local ta, va = _type_and_value(a)
+                local tb, vb = _type_and_value(b)
                 if ta == tb then
                     if va == vb then return false, true end
                     return va > vb
@@ -219,8 +216,8 @@ function M.comp_complex(_k, _desc)
             end
         else
             return function(a, b)
-                local ta, va = type_and_value(a)
-                local tb, vb = type_and_value(b)
+                local ta, va = _type_and_value(a)
+                local tb, vb = _type_and_value(b)
                 if ta == tb then
                     if va == vb then return false, true end
                     return va < vb
@@ -231,8 +228,8 @@ function M.comp_complex(_k, _desc)
     else
         if desc then
             return function(a, b)
-                local ta, va = type_and_value(a[k])
-                local tb, vb = type_and_value(b[k])
+                local ta, va = _type_and_value(a[k])
+                local tb, vb = _type_and_value(b[k])
                 if ta == tb then
                     if va == vb then return false, true end
                     return va > vb, false
@@ -241,8 +238,8 @@ function M.comp_complex(_k, _desc)
             end
         else
             return function(a, b)
-                local ta, va = type_and_value(a[k])
-                local tb, vb = type_and_value(b[k])
+                local ta, va = _type_and_value(a[k])
+                local tb, vb = _type_and_value(b[k])
                 if ta == tb then
                     if va == vb then return false, true end
                     return va < vb, false
