@@ -1,3 +1,4 @@
+print("Test: filesystem module")
 local filesystem = require("filesystem")
 
 --[[ filesystem.splitPath

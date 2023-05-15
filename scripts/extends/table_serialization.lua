@@ -5,30 +5,32 @@ assert(_VERSION >= "Lua 5.1", "Lua version >= 5.1 required")
 
 -- # CONSTANTS_DEFINITION
 
-
 --- the table indent string
 local LITERAL_INDENT = "    "
 --- the structual newline string
 local LITERAL_NEWLINE = "\n"
---- the reference table name
-local LITERAL_REFS = "_refs"
---- the folding flag for verbose mode
-local LITERAL_VERBOSE_FOLDING_TAG = "..."
---- the limit tag for verbose mode
-local LITERAL_VERBOSE_LIMIT_TAG = "DUMP_LIMIT"
+--- the table item separator string
+local LITERAL_SEPARATOR = ", "
+--- the literal string format for illegal objects, `nil` to leap
+local LITERAL_ILLEGAL_FORMAT = nil
+--- the literal string format for illegal objects in verbose mode
+local LITERAL_ILLEGAL_FORMAT_VERBOSE = "<%s>"
+--- the literal string format for cycle objects
+local LITERAL_CYCLE_FORMAT = "CYCLE: %s"
+--- the literal string format for reference objects
+local LITERAL_REF_FORMAT = "REF: %s"
+--- the literal string format for metatable objects
+local LITERAL_METATABLE_FORMAT = "<.metatable>"
 --- the default verbose mode, if true will show additional information for read but difficult to rebuild table
 local DEFAULT_VERBOSE = false
 --- the default depth limit, table deeper than this will be folded and show `DUMP_LIMIT_HINT`
-local DEFAULT_DEPTH_LIMIT = 10
---- the hint for depth limit item
-local DUMP_UNSUPPORTED_HINT = "%s"
+local DEFAULT_DEPTH_LIMIT = math.huge
 
 -- # PRIVATE_DEFINITION
 
 local _ctx_verbose = DEFAULT_VERBOSE
 local _ctx_depth_limit = DEFAULT_DEPTH_LIMIT
-local _ctx_refs, _ctx_ref_i = {}, {}
-local _ctx_ref_loop = {}
+local _ctx_fragments, _ctx_lock, _ctx_ref = {}, {}, {}
 
 --- get type index and value index
 local function _tvindex(o)
@@ -47,242 +49,231 @@ end
 local function _tvcompare(a, b)
     local ta, va = _tvindex(a)
     local tb, vb = _tvindex(b)
-    if ta == tb then
-        return va < vb
-    else
-        return ta < tb
-    end
+    if ta == tb then return va < vb else return ta < tb end
 end
 
 --- sorted key pairs
 local function _sorted_pairs(t)
     local keys = {}
-    for k in pairs(t) do
-        table.insert(keys, k)
-    end
+    for k in pairs(t) do table.insert(keys, k) end
     table.sort(keys, _tvcompare)
     local i = 0
     return function()
         i = i + 1
         local k = keys[i]
-        if k ~= nil then
-            return k, t[k]
-        end
+        if k ~= nil then return k, t[k] end
     end
 end
 
---- check if unsupported object
-local function _unsupported(o, depth)
+--- appand literal fragment
+local function _append(frag)
+    if type(frag) ~= "string" then return false end
+    table.insert(_ctx_fragments, frag)
+    return #_ctx_fragments
+end
+
+--- reset the top of the fragment list
+local function _top(i)
+    for j = #_ctx_fragments, i, -1 do
+        _ctx_fragments[j] = nil
+    end
+end
+
+--- check if object
+local function _supported(o, depth)
     local t = type(o)
     if t == "function" or t == "thread" or t == "userdata" then
-        return "not literal type"
+        return false, "not literal type"
     elseif t == "table" then
-        if depth >= _ctx_depth_limit then
-            return "table depth limit"
+        if depth and depth >= _ctx_depth_limit then
+            return false, "table depth limit"
         end
         local mt = getmetatable(o)
         if mt and type(mt) ~= "table" then
-            return "table with protected metatable"
+            return false, "table with protected metatable"
         end
     end
+    return true
 end
 
---- check if exists self loop
-local function _selfloop(o)
-    if _ctx_ref_loop[o] then
-        return "self loop"
-    end
-end
-
---- check if object is marked in references
-local function _markref(o, special)
-    local loop = _ctx_ref_loop[o]
-
-    local oi = _ctx_ref_i[o]
-    local i = oi
-    if special and special >= 0 then
-        if not i or i < 0 then
-            i = #_ctx_refs + 1
-            _ctx_refs[i] = o
-        else
-            i = 0
-        end
-        if special > 1 then
-            i = 0
-        end
+--- check cycle in table
+local function _cycle(o, mark)
+    if mark then
+        if _ctx_lock[o] then return true end
+        _ctx_lock[o] = true
+        return false
     else
-        i = i or -1
-    end
-    _ctx_ref_i[o] = i
-    return oi
-end
-
---- any to reference
-local function _any2ref(o)
-    local t = type(o)
-    if t == "table" or t == "function" or t == "userdata" or t == "thread" then
-        if _markref(o) then
-            return
-        end
-        if _unsupported(o, -1) then
-            _markref(o, true)
-        end
-        if t == "table" then
-            local mt = getmetatable(o)
-            if mt then
-                _any2ref(mt)
-            end
-            for k, v in _sorted_pairs(o) do
-                _any2ref(k)
-                _any2ref(v)
-            end
-            _markref(o, false)
-        end
+        _ctx_lock[o] = nil
     end
 end
 
---- analayze references
-local function _analyze_refs(o)
-    _ctx_refs, _ctx_ref_i, _ctx_ref_loop = {}, {}, {}
-    _any2ref(o)
-    local n = #_ctx_refs
-    local c = 0
-    for i = 1, n do
-        local ref = _ctx_refs[i]
-        _ctx_refs[i] = nil
-        if _ctx_ref_i[ref] == 0 then
-            c = c + 1
-            _ctx_ref_i[ref] = c
-            _ctx_refs[c] = ref
-        else
-            _ctx_ref_i[ref] = nil
-        end
-    end
+--- check if object ref to exists literal
+local function _ref(o)
+    if _ctx_ref[o] then return true end
+    _ctx_ref[o] = true
+    return false
 end
 
-local _key2literal, _val2literal = nil, nil
+local _appendkey, _appendval = nil, nil
+
+--- illegal to literal string
+local function _append_illegal(i, format)
+    i = tostring(i)
+    if format then i = string.format(format, i) end
+    if _ctx_verbose then format = LITERAL_ILLEGAL_FORMAT_VERBOSE else format = LITERAL_ILLEGAL_FORMAT end
+    i = format and string.format(format, i)
+    if not _ctx_verbose then i = i and string.format("%q", i) end
+    return _append(i)
+end
 
 --- boolean to literal string
-local function _boolean2literal(b)
-    return b and "true" or "false"
+local function _append_boolean(b)
+    if b then return _append("true") else return _append("false") end
 end
 
 --- number to literal string
-local function _number2literal(n)
-    if n ~= n then              -- (NaN)
-        return "0/0"
+local function _append_number(n)
+    if _ctx_verbose then
+        return _append(tostring(n))
+    elseif n ~= n then          -- (NaN)
+        return _append("0/0")
     elseif n == math.huge then  -- (inf)
-        return "math.huge"
+        return _append("math.huge")
     elseif n == -math.huge then -- (-inf)
-        return "-math.huge"
+        return _append("-math.huge")
     else
-        return tostring(n)
+        return _append(tostring(n))
     end
 end
 
 --- string to literal string
-local function _string2literal(s)
-    return string.format("%q", s)
+local function _append_string(s)
+    return _append(string.format("%q", s))
 end
 
 --- table to literal string
-local function _table2literal(t, depth)
-    local frag = {}
+local function _append_table(t, depth)
+    if _cycle(t, true) then return _append_illegal(t, LITERAL_CYCLE_FORMAT) end
+    if _ref(t) then return _append_illegal(t, LITERAL_REF_FORMAT) end
     depth = (depth or 0) + 1
-    table.insert(frag, "{")
+    _append("{")
     if _ctx_verbose then
-        table.insert(frag, " ")
-        table.insert(frag, tostring(t))
+        _append("  -- ")
+        _append(tostring(t))
     end
-    table.insert(frag, LITERAL_NEWLINE)
+    _append(LITERAL_NEWLINE)
     for k, v in _sorted_pairs(t) do
-        table.insert(frag, string.rep(LITERAL_INDENT, depth))
-        table.insert(frag, _key2literal(k, depth))
-        table.insert(frag, " = ")
-        table.insert(frag, _val2literal(v, depth))
-        if not _ctx_verbose then
-            table.insert(frag, ",")
-        end
-        table.insert(frag, LITERAL_NEWLINE)
-    end
-    local keys = {}
-    for k in pairs(t) do
-        table.insert(keys, k)
+        local f = _append(string.rep(LITERAL_INDENT, depth))
+        if _appendkey(k, depth) and _append(" = ") and _appendval(v, depth) then
+            _append(LITERAL_SEPARATOR)
+            _append(LITERAL_NEWLINE)
+        else _top(f) end
     end
     if _ctx_verbose then
         local mt = getmetatable(t)
         if mt then
-            table.insert(frag, string.rep(LITERAL_INDENT, depth))
-            table.insert(frag, "<.metatable> = ")
-            table.insert(frag, _val2literal(mt, depth))
-            table.insert(frag, LITERAL_NEWLINE)
+            _append(string.rep(LITERAL_INDENT, depth))
+            _append(string.format(LITERAL_METATABLE_FORMAT, tostring(mt)))
+            _append(" = ")
+            _appendval(mt, depth)
+            _append(LITERAL_NEWLINE)
         end
     end
-    table.insert(frag, string.rep(LITERAL_INDENT, depth - 1))
-    table.insert(frag, "}")
-    return table.concat(frag)
+    _append(string.rep(LITERAL_INDENT, depth - 1))
+    _cycle(t, false)
+    return _append("}")
 end
 
---- reference to literal string
-local function _ref2literal(r)
-    local i = _ctx_ref_i[r]
-    if i then
-        return string.format("%s[%d]", LITERAL_REFS, i)
-    else
-        return nil
+--- key to literal string
+_appendkey = function(k, depth)
+    if not _supported(k, depth) then
+        return _append_illegal(k)
     end
-end
-
---- illegal to literal string
-local function _illegal2literal(i)
-    local i = string.format(DUMP_UNSUPPORTED_HINT, tostring(i))
-    if _ctx_verbose then
-        return i
+    local t = type(k)
+    if t == "boolean" then
+        local f = _append("[")
+        if _append_boolean(k) then
+            return _append("]")
+        else return _top(f) end
+    elseif t == "number" then
+        local f = _append("[")
+        if _append_number(k) then
+            return _append("]")
+        else return _top(f) end
+    elseif t == "string" then
+        if _ctx_verbose or string.find(k, "^[_%a][_%w]*$") then
+            return _append(k)
+        else
+            local f = _append("[")
+            if _append_string(k) then
+                return _append("]")
+            else return _top(f) end
+        end
+    elseif t == "table" then
+        local f = _append("[")
+        if _append_table(k, depth) then
+            return _append("]")
+        else return _top(f) end
     else
-        return string.format("%q", i)
+        return _append_illegal(k)
     end
 end
 
 --- value to literal string
-_val2literal = function(v, depth)
-    local ref = _ref2literal(v)
-    if ref then
-        return ref
+_appendval = function(v, depth)
+    if not _supported(v, depth) then
+        return _append_illegal(v)
     end
     local t = type(v)
     if t == "boolean" then
-        return _boolean2literal(v)
+        return _append_boolean(v)
     elseif t == "number" then
-        return _number2literal(v)
+        return _append_number(v)
     elseif t == "string" then
-        return _string2literal(v)
+        return _append_string(v)
     elseif t == "table" then
-        return _table2literal(v, depth)
+        return _append_table(v, depth)
     else
-        return tostring(v)
+        return _append_illegal(v)
     end
 end
 
---- key to literal string
-_key2literal = function(k, depth)
-    local ref = _ref2literal(k)
-    if ref then
-        return "[" .. ref .. "]"
-    end
-    local t = type(k)
-    if t == "boolean" then
-        return "[" .. _boolean2literal(k) .. "]"
-    elseif t == "number" then
-        return "[" .. _number2literal(k) .. "]"
-    elseif t == "string" then
-        if _ctx_verbose or string.find(k, "^[_%a][_%w]*$") then
-            return k
-        else
-            return "[" .. _string2literal(k) .. "]"
-        end
-    elseif t == "table" then
-        return "[" .. _table2literal(k, depth) .. "]"
-    else
-        return "[" .. tostring(k) .. "]"
-    end
+-- # MODULE_DEFINITION
+
+local M = table
+
+--- dump table to literal string
+---@param t table @table to dump
+---@param _depth number @depth to dump, default is `inf`
+---@return string @literal string
+function M.dump(t, _depth)
+    _ctx_verbose = true
+    _ctx_depth_limit = _depth or math.huge
+    _ctx_fragments, _ctx_lock, _ctx_ref = {}, {}, {}
+    _ctx_depth_limit = _depth or math.huge
+    _appendval(t)
+    return table.concat(_ctx_fragments)
 end
+
+--- serialize table to literal string, which can be deserialize to restore table
+---@param t table @table to serialize
+---@return string @serialized string
+function M.serialize(t)
+    _ctx_verbose = false
+    _ctx_depth_limit = math.huge
+    _ctx_fragments, _ctx_lock, _ctx_ref = {}, {}, {}
+    _append("return ")
+    _appendval(t)
+    return table.concat(_ctx_fragments)
+end
+
+--- deserialize literal string to restore table
+---@param s string @serialized string
+---@return table @restored table
+function M.deserialize(s)
+    local f, err = load(s, "deserialize", "t", {})
+    if not f then return nil, err end
+    return f()
+end
+
+return M
