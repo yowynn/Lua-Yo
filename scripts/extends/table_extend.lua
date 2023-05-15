@@ -268,22 +268,68 @@ end
 
 --- traverse a table, but just select given keys in given order
 ---@param t table @the table to traverse
----@param _klist any[] @optional, the key list, default is the key list of the table
----@param _comp (fun(a:any,b:any):boolean,boolean) @optional, the compare function to generate the key list, if present, force to generate the key list
----@return fun():any,any @the iterator function, the first return value is the key, the second return value is the value
+---@param selectList table @the keys that will be traversed, the order is the traverse order
+---@param _adjustOut boolean|table @optional, if true, the output table will be adjusted to the same as the input table, if a table, it will be used as the reused temp table
+---@return (fun():any,any) @the iterator
 ---@return table @the table to traverse
 ---@return any @the current key
-function M.pairs_selected(t, _klist, _comp)
-    local klist = _klist
-    local comp = _comp
-    if not klist or comp then
-        klist = M.keys(t, M.clear(klist or {}))
-        table.sort(klist, comp)
+function M.select_pairs(t, selectList, _adjustOut)
+    if not selectList then return pairs(t) end
+    if _adjustOut then
+        local adjust = type(_adjustOut) == "table" and M.clear(_adjustOut) or {}
+        for k in pairs(t) do
+            adjust[k] = true
+        end
+        for _, k in ipairs(selectList) do
+            adjust[k] = nil
+        end
+        local i = 0
+        local function iter(_, k)
+            local nk = nil
+            if i then
+                i = i + 1
+                nk = selectList[i]
+                if nk == nil then
+                    i = nil
+                    return iter(_, nil)
+                end
+            else
+                nk = next(adjust, k)
+                if nk == nil then return nil end
+            end
+            local nv = t[nk]
+            if nv == nil then return iter(_, nk) end
+            return nk, nv
+        end
+        return iter, t, nil
+    else
+        local i = 0
+        return function()
+            i = i + 1
+            local k = selectList[i]
+            if k == nil then return nil end
+            return k, t[k]
+        end, t, nil
     end
+end
+
+--- traverse a table, but reorder the keys by given compare function
+---@param t table @the table to traverse
+---@param comp (fun(a:any,b:any):boolean,boolean) @the compare function
+---@param _out table @optional, the table to store the output keylist, if nil, a new table will be created
+---@return (fun():any,any) @the iterator
+---@return table @the table to traverse
+---@return any @the current key
+function M.sort_pairs(t, comp, _out)
+    local out = M.clear(_out or {})
+    for k in pairs(t) do
+        out[#out + 1] = k
+    end
+    table.sort(out, comp)
     local i = 0
     return function()
         i = i + 1
-        local k = klist[i]
+        local k = out[i]
         if k == nil then return nil end
         return k, t[k]
     end, t, nil
