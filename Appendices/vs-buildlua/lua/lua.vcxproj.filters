@@ -15,24 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\lua-5.4.4\src\lua.c">
+    <ClCompile Include="..\..\..\archives\lua\lua-5.4.4\src\lua.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lprefix.h">
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lprefix.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h">
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lua.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h">
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\luaconf.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h">
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lualib.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lauxlib.h">
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lauxlib.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

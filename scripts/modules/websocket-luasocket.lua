@@ -395,4 +395,7 @@ M.__index = {
     close = M.close,
 }
 
-return M
+return {
+    connect = M.connect,
+    update = M.update,
+}

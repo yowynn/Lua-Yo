@@ -129,7 +129,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\lua-5.4.4\src\lua.c" />
+    <ClCompile Include="..\..\..\archives\lua\lua-5.4.4\src\lua.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lualib(dyna)\lualib(dyna).vcxproj">
@@ -137,11 +137,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lauxlib.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lprefix.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lua.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\luaconf.h" />
-    <ClInclude Include="..\..\..\lua-5.4.4\src\lualib.h" />
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lauxlib.h" />
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lprefix.h" />
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lua.h" />
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\luaconf.h" />
+    <ClInclude Include="..\..\..\archives\lua\lua-5.4.4\src\lualib.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
