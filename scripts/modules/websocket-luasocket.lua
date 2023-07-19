@@ -173,6 +173,10 @@ function M.connect(url, onConnect, onClose)
     if statusCode ~= "101" then -- 101 Switching Protocols
         return nil, "handshake failed: " .. (reason or "invalid handshake response")
     end
+    local ok, err = _socket:settimeout(0)
+    if not ok then
+        return nil, "set socket timeout failed: " .. err
+    end
     return M._onConnectInternal(client)
 end
 
@@ -258,11 +262,6 @@ function M:_recvCoroutine()
     local _nextop = "head"
     while true do
         local _socket = self.m_socket
-        local ok, err = _socket:settimeout(0)
-        if not ok then
-            self:close("recving set timeout fail: " .. tostring(err))
-            return
-        end
         local _data, err = _socket:receive(_nextlen)
         if _data then
             if _nextop == "head" then
