@@ -1,0 +1,35 @@
+{
+	"Create a Module": {
+		"prefix": "module",
+		"scope": "javascript,typescript",
+		"body": [
+			"--- ${1:MOD_NAME}: ${2:MOD_DESC}",
+			"---@author: AUTHOR & DATE HERE",
+			"local M = {}",
+			"",
+			"-- # REFERENCES:",
+			"",
+			"-- # USAGE:",
+			"--[[ -----------------------------------------------------------",
+			"-- TODO: WRITE USAGE HERE",
+			"--]] -----------------------------------------------------------",
+			"",
+			"-- # CONFIGS:",
+			"",
+			"-- # DEPENDENCIES:",
+			"-- TODO: ASSERT DEPENDENCIES HERE",
+			"",
+			"-- # PRIVATE_DEFINITION:",
+			"",
+			"-- # CONSTANTS_DEFINITION:",
+			"",
+			"-- # MODULE_DEFINITION:",
+			"",
+			"",
+			"",
+			"return M",
+			"",
+		],
+		"description": "Create a lua Module"
+	}
+}

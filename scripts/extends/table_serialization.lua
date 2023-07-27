@@ -250,7 +250,6 @@ function M.dump(t, _depth)
     _ctx_verbose = true
     _ctx_depth_limit = _depth or math.huge
     _ctx_fragments, _ctx_lock, _ctx_ref = {}, {}, {}
-    _ctx_depth_limit = _depth or math.huge
     _appendval(t)
     return table.concat(_ctx_fragments)
 end
