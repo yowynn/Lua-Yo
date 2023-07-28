@@ -1,9 +1,8 @@
+--- table extension for serialization
 ---@author: Wynn Yo 2023-05-05 14:56:31
+local M = table
 
--- # DEPENDENCIES
-assert(_VERSION >= "Lua 5.1", "Lua version >= 5.1 required")
-
--- # CONSTANTS_DEFINITION
+-- # CONFIGS:
 
 --- the table indent string
 local LITERAL_INDENT = "    "
@@ -26,7 +25,23 @@ local DEFAULT_VERBOSE = false
 --- the default depth limit, table deeper than this will be folded and show `DUMP_LIMIT_HINT`
 local DEFAULT_DEPTH_LIMIT = math.huge
 
--- # PRIVATE_DEFINITION
+-- # DEPENDENCIES:
+
+assert(_VERSION >= "Lua 5.1", "Lua version >= 5.1 required")
+assert(getmetatable, "`getmetatable` not found")
+assert(load, "`load` not found")
+assert(pairs, "`pairs` not found")
+assert(tostring, "`tostring` not found")
+assert(type, "`type` not found")
+assert(math.huge, "`math.huge` not found")
+assert(string.find, "`string.find` not found")
+assert(string.format, "`string.format` not found")
+assert(string.rep, "`string.rep` not found")
+assert(table.concat, "`table.concat` not found")
+assert(table.insert, "`table.insert` not found")
+assert(table.sort, "`table.sort` not found")
+
+-- # PRIVATE_DEFINITION:
 
 local _ctx_verbose = DEFAULT_VERBOSE
 local _ctx_depth_limit = DEFAULT_DEPTH_LIMIT
@@ -238,9 +253,7 @@ _appendval = function(v, depth)
     end
 end
 
--- # MODULE_DEFINITION
-
-local M = table
+-- # MODULE_DEFINITION:
 
 --- dump table to literal string
 ---@param t table @table to dump
@@ -261,7 +274,6 @@ function M.serialize(t)
     _ctx_verbose = false
     _ctx_depth_limit = math.huge
     _ctx_fragments, _ctx_lock, _ctx_ref = {}, {}, {}
-    _append("return ")
     _appendval(t)
     return table.concat(_ctx_fragments)
 end
@@ -270,9 +282,11 @@ end
 ---@param s string @serialized string
 ---@return table @restored table
 function M.deserialize(s)
-    local f, err = load(s, "deserialize", "t", {})
+    local f, err = load("return " .. s, "deserialize", "t", {})
     if not f then return nil, err end
     return f()
 end
+
+-- # MODULE_EXPORT:
 
 return M

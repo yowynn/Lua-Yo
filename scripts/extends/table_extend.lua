@@ -1,14 +1,26 @@
+--- extend table module
 ---@author: Wynn Yo 2023-04-19 18:34:04
+local M = table
 
--- # DEPENDENCIES
+-- # DEPENDENCIES:
 assert(_VERSION >= "Lua 5.1", "Lua version >= 5.1 required")
+assert(assert, "`assert` not found")
+assert(error, "`error` not found")
+assert(ipairs, "`ipairs` not found")
+assert(next, "`next` not found")
+assert(pairs, "`pairs` not found")
+assert(select, "`select` not found")
+assert(setmetatable, "`setmetatable` not found")
+assert(tostring, "`tostring` not found")
+assert(type, "`type` not found")
+assert(table.sort, "`table.sort` not found")
 
--- # CONSTANTS_DEFINITION
+-- # CONSTANTS_DEFINITION:
 local METATABLE_WEAKK = { __mode = "k" }
 local METATABLE_WEAKV = { __mode = "v" }
 local METATABLE_WEAKKV = { __mode = "kv" }
 
--- # PRIVATE_DEFINITION
+-- # PRIVATE_DEFINITION:
 
 local function _type_and_value(o)
     local t = type(o)
@@ -22,8 +34,7 @@ local function _type_and_value(o)
     return 8, tostring(o)
 end
 
--- # MODULE_DEFINITION
-local M = table
+-- # MODULE_DEFINITION:
 
 --- init a table
 ---@param _out table @optional, the table to init
@@ -334,5 +345,7 @@ function M.sort_pairs(t, comp, _out)
         return k, t[k]
     end, t, nil
 end
+
+-- # MODULE_EXPORT:
 
 return M

@@ -1,7 +1,7 @@
 {
 	"Create a Module": {
 		"prefix": "module",
-		"scope": "javascript,typescript",
+		"scope": "lua",
 		"body": [
 			"--- ${1:MOD_NAME}: ${2:MOD_DESC}",
 			"---@author: AUTHOR & DATE HERE",
@@ -19,13 +19,13 @@
 			"-- # DEPENDENCIES:",
 			"-- TODO: ASSERT DEPENDENCIES HERE",
 			"",
-			"-- # PRIVATE_DEFINITION:",
-			"",
 			"-- # CONSTANTS_DEFINITION:",
+			"",
+			"-- # PRIVATE_DEFINITION:",
 			"",
 			"-- # MODULE_DEFINITION:",
 			"",
-			"",
+			"-- # MODULE_EXPORT:",
 			"",
 			"return M",
 			"",

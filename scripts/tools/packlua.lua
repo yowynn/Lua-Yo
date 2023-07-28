@@ -1,37 +1,144 @@
-local DEFINE_REQUIRE_AS_COMMAND = true -- require as command
-
---- packlua: pack a muiti-file lua project to a single lua file
+--- packlua: pack multi-lua files into one lua file
 ---@author: Wynn Yo 2022-08-04 16:46:54
+local M = {}
+
+-- # REFERENCES:
+
 -- # USAGE:
 --[[ -----------------------------------------------------------
-    1. copy `packlua.lua` to your project root
-    2. run:
-        lua packlua.lua path/to/entry.lua  path/to/output.lua
+1. copy `packlua.lua` to your project root
+2. run:
+    lua packlua.lua path/to/entry.lua path/to/output.lua
 --]] -----------------------------------------------------------
--- # DEPENDENCIES
-local module = {}
-local error = error
-local print = print
-local tostring = tostring
-local io_open = io.open
-local table_concat = table.concat
 
--- # STATIC_CONFIG_DEFINITION
+-- # CONFIGS:
 
---- the global module name of the out file (It doesn't matter what it is)
-module._TEMPLATE_NAME = "_GLOBAL_MOD_"
+--- use as command line tool
+local USE_AS_CLI = true
 
--- # CONTEXT_VALUE_DEFINITION
+--- the configs of this module
+local CONFIG = {
+    --- the global module name of the out file (It doesn't matter what it is)
+    GLOBAL_MOD_NAME = "PACKLUA",
+    --- require patterns
+    REQUIRE_PATTERNS = {
+        "%f[%w]require%s*%(%s*[\"']([%w/%._%-]+)[\"']%s*%)",
+        "%f[%w]require%s*[\"']([%w/%._%-]+)[\"']",
+    },
+    --- replace require function literals
+    REQUIRE_REPLACE_LITERALS = {
+        "_ENV.require",
+        "_G.require",
+    },
+}
 
---- the patterns to find out "require" statement
-module._require_patterns = nil
-module._ctx_pieces = nil
-module._ctx_require_map = nil
+-- # DEPENDENCIES:
 
--- # METHODS_DEFINITION
+assert(error, "`error` not found")
+assert(ipairs, "`ipairs` not found")
+assert(pairs, "`pairs` not found")
+assert(pcall, "`pcall` not found")
+assert(print, "`print` not found")
+assert(require, "`require` not found")
+assert(tostring, "`tostring` not found")
+assert(io.open, "`io.open` not found")
+assert(table.concat, "`table.concat` not found")
 
-function module._readLua(path)
-    local f = io_open(path, "rb")
+-- # CONSTANTS_DEFINITION:
+
+local _TEMPLATE_HEADER_BUILDER = function()
+    local _TEMPLATE_HEADER = [=[
+-- *************************************************************
+-- **                genarate by ©packlua.lua                 **
+-- *************************************************************
+
+local _PACKLUA_GLOBAL_MOD_ = {}
+_PACKLUA_GLOBAL_MOD_._loaded = {}
+_PACKLUA_GLOBAL_MOD_._requiremap = {}
+_PACKLUA_GLOBAL_MOD_["#REQUIRE"] = function(modname)
+    if _PACKLUA_GLOBAL_MOD_._loaded[modname] then
+        return _PACKLUA_GLOBAL_MOD_._loaded[modname]
+    else
+_PACKLUA_GETMOD_FROM_REQUIRE_
+        _PACKLUA_GLOBAL_MOD_._loaded[modname] = mod
+        return mod
+    end
+end
+
+]=] -- _TEMPLATE_HEADER
+    local getmod_builder = {}
+    getmod_builder[#getmod_builder + 1] = "        local ok, mod = nil, nil\n"
+    local require_literal = {
+        "_PACKLUA_GLOBAL_MOD_._requiremap[modname]",
+    }
+    for _, v in ipairs(CONFIG.REQUIRE_REPLACE_LITERALS) do
+        require_literal[#require_literal + 1] = v
+    end
+    for _, v in ipairs(require_literal) do
+        getmod_builder[#getmod_builder + 1] = "        if not ok then\n"
+        getmod_builder[#getmod_builder + 1] = "            local requirefunc = "
+        getmod_builder[#getmod_builder + 1] = v
+        getmod_builder[#getmod_builder + 1] = "\n"
+        getmod_builder[#getmod_builder + 1] = "            if requirefunc then\n"
+        getmod_builder[#getmod_builder + 1] = "                ok, mod = pcall(requirefunc, modname)\n"
+        getmod_builder[#getmod_builder + 1] = "            end\n"
+        getmod_builder[#getmod_builder + 1] = "        end\n"
+    end
+    getmod_builder[#getmod_builder + 1] = "        if not ok then\n"
+    getmod_builder[#getmod_builder + 1] = "            error(\"module '\" .. modname .. \"' not found\")\n"
+    getmod_builder[#getmod_builder + 1] = "        end\n"
+    getmod_builder[#getmod_builder + 1] = "        mod = mod or true\n"
+    local _PACKLUA_GETMOD_FROM_REQUIRE_ = table.concat(getmod_builder)
+    _TEMPLATE_HEADER = _TEMPLATE_HEADER:gsub("_PACKLUA_GETMOD_FROM_REQUIRE_", _PACKLUA_GETMOD_FROM_REQUIRE_)
+    _TEMPLATE_HEADER = _TEMPLATE_HEADER:gsub("_PACKLUA_GLOBAL_MOD_", CONFIG.GLOBAL_MOD_NAME)
+    return _TEMPLATE_HEADER
+end
+
+local _TEMPLATE_MOD_BUILDER = function(modname, content)
+    local _TEMPLATE_MOD = [=[
+
+-- # _PACKLUA_MOD_NAME_
+--[[MOD BEGIN]] _PACKLUA_GLOBAL_MOD_._requiremap[_PACKLUA_MOD_NAME_Q_] = function()
+_PACKLUA_MOD_CONTENT_
+--[[MOD END]] end
+
+]=] -- _TEMPLATE_MOD
+    _TEMPLATE_MOD = _TEMPLATE_MOD:gsub("(_[%w_]+_)", {
+        _PACKLUA_MOD_NAME_ = modname,
+        _PACKLUA_MOD_NAME_Q_ = ("%q"):format(modname),
+        _PACKLUA_GLOBAL_MOD_ = CONFIG.GLOBAL_MOD_NAME,
+        _PACKLUA_MOD_CONTENT_ = content,
+    })
+
+    return _TEMPLATE_MOD
+end
+
+local _TEMPLATE_LOCALREQUIRE_BUILDER = function(modname)
+    local _TEMPLATE_LOCALREQUIRE = [=[_PACKLUA_GLOBAL_MOD_["#REQUIRE"](_PACKLUA_MOD_NAME_Q_)]=]
+    _TEMPLATE_LOCALREQUIRE = _TEMPLATE_LOCALREQUIRE:gsub("(_[%w_]+_)", {
+        _PACKLUA_MOD_NAME_Q_ = ("%q"):format(modname),
+        _PACKLUA_GLOBAL_MOD_ = CONFIG.GLOBAL_MOD_NAME,
+    })
+    return _TEMPLATE_LOCALREQUIRE
+end
+
+local _TEMPLATE_FOOTER_BUILDER = function(modname)
+    local _TEMPLATE_FOOTER = [=[
+
+return _PACKLUA_GLOBAL_MOD_["#REQUIRE"](_PACKLUA_MOD_NAME_Q_)
+]=]
+    _TEMPLATE_FOOTER = _TEMPLATE_FOOTER:gsub("(_[%w_]+_)", {
+        _PACKLUA_MOD_NAME_Q_ = ("%q"):format(modname),
+        _PACKLUA_GLOBAL_MOD_ = CONFIG.GLOBAL_MOD_NAME,
+    })
+    return _TEMPLATE_FOOTER
+end
+
+
+-- # PRIVATE_DEFINITION:
+
+local function _readLua(path)
+    local f = io.open(path, "rb")
     if f == nil then
         return nil
     end
@@ -40,8 +147,8 @@ function module._readLua(path)
     return content
 end
 
-function module._writeLua(path, content)
-    local f = io_open(path, "wb")
+local function _writeLua(path, content)
+    local f = io.open(path, "wb")
     if f == nil then
         return nil
     end
@@ -50,168 +157,64 @@ function module._writeLua(path, content)
     return true
 end
 
---- global replace `_[%w_]+_` pattern to actual value
-function module._greplace(template, replacemap)
-    return template:gsub("(_[%w_]+_)", replacemap)
-end
-
-function module._pushPiece(piece)
-    module._ctx_pieces[#module._ctx_pieces + 1] = piece
-end
-
-function module._contentPieces()
-    return table_concat(module._ctx_pieces)
-end
-
-module._TEMPLATE_HEAD = [=[
--- *************************************************************
--- **              genarate by ©packlua.lua                   **
--- *************************************************************
-
-local _GLOBAL_MOD_ = {}
-_GLOBAL_MOD_._grequire = _G and _G.require or require or error("no fallback require")
-_GLOBAL_MOD_._loaded = {}
-_GLOBAL_MOD_._requiremap = {}
-_GLOBAL_MOD_["#REQUIRE"] = function(modname)
-    if _GLOBAL_MOD_._loaded[modname] then
-        return _GLOBAL_MOD_._loaded[modname]
-    else
-        local requirefunc = _GLOBAL_MOD_._requiremap[modname] or _GLOBAL_MOD_._grequire
-        local ok, mod = pcall(requirefunc, modname)
-        if ok then
-            mod = mod or true
-            _GLOBAL_MOD_._loaded[modname] = mod
-            return mod
-        else
-            error(mod)
-        end
-    end
-end
-
-]=]
-function module._pushHead()
-    local piece = module._TEMPLATE_HEAD
-    module._pushPiece(piece)
-end
-
-module._TEMPLATE_REQUIREMAP = [=[
-
--- # _MOD_NAME_
---[[MOD BEGIN]] _GLOBAL_MOD_._requiremap[_MOD_NAME_Q_] = function()
-_MOD_CONTENT_
---[[MOD BEGIN]] end
-
-]=]
-function module._pushRequiremap(_MOD_NAME_, _MOD_CONTENT_)
-    local piece = module._greplace(module._TEMPLATE_REQUIREMAP, {
-        _MOD_NAME_ = _MOD_NAME_,
-        _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_),
-        _MOD_CONTENT_ = _MOD_CONTENT_,
-    })
-    module._pushPiece(piece)
-end
-
-module._TEMPLATE_LOCALREQUIRE = [=[_GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)]=]
-function module._pushLuafileRecursive(path)
-    if module._ctx_require_map[path] then
+local function _pushLuafileRecursive(path, pieces, requiremap)
+    if requiremap[path] then
         return
-    else
-        module._ctx_require_map[path] = true
     end
+    requiremap[path] = true
     local luapath = path
     if luapath:sub(-4):lower() == ".lua" then
         luapath = luapath:sub(1, -5)
     end
     luapath = luapath:gsub("\\", "/"):gsub("([^%.])%.", "%1/") .. ".lua"
-    local piece = module._readLua(luapath)
-    if piece == nil then
+    local piece = _readLua(luapath)
+    if not piece then
         print("[packlua]read file failed: " .. tostring(path))
         return
-    else
-        print("[packlua]read file success: " .. tostring(path))
     end
-    for i = 1, #module._require_patterns do
-        local pattern = module._require_patterns[i]
-        piece = piece:gsub(pattern, function(prefix, _MOD_NAME_)
-            module._pushLuafileRecursive(_MOD_NAME_)
-            return prefix .. module._greplace(module._TEMPLATE_LOCALREQUIRE, {
-                _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_),
-            })
+    print("[packlua]read file success: " .. tostring(path))
+    for _, pattern in ipairs(CONFIG.REQUIRE_PATTERNS) do
+        piece = piece:gsub(pattern, function(modname)
+            _pushLuafileRecursive(modname, pieces, requiremap)
+            return _TEMPLATE_LOCALREQUIRE_BUILDER(modname)
         end)
     end
-    module._pushRequiremap(path, piece)
+    pieces[#pieces + 1] = _TEMPLATE_MOD_BUILDER(path, piece)
 end
 
-module._TEMPLATE_TAIL = [=[
+-- # MODULE_DEFINITION:
 
-return _GLOBAL_MOD_["#REQUIRE"](_MOD_NAME_Q_)
-]=]
-function module._push_tail(_MOD_NAME_)
-    local piece = module._greplace(module._TEMPLATE_TAIL, {
-        _MOD_NAME_Q_ = ("%q"):format(_MOD_NAME_),
-    })
-    module._pushPiece(piece)
-end
-
---- set require patterns of your require identifier,
---- to find your require and replace it to `packlua`'s require
-function module.AddRequireIdentifier(identifier)
-    identifier = identifier:gsub("%.", "%%.")
-    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*%(%s*[\"']([%w/%._%-]+)[\"']%s*%)"
-    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*%(%s*[\"']([%w/%._%-]+)[\"']%s*%)"
-    module._require_patterns[#module._require_patterns + 1] = "^(%s*)" .. identifier .. "%s*[\"']([%w/%._%-]+)[\"']"
-    module._require_patterns[#module._require_patterns + 1] = "(%s+)" .. identifier .. "%s*[\"']([%w/%._%-]+)[\"']"
-end
-
---- [optional] set global module name, default is "_GLOBAL_MOD_"
-function module.SetGlobalName(modname)
-    module._TEMPLATE_HEAD = module._TEMPLATE_HEAD:gsub(module._TEMPLATE_NAME, modname)
-    module._TEMPLATE_REQUIREMAP = module._TEMPLATE_REQUIREMAP:gsub(module._TEMPLATE_NAME, modname)
-    module._TEMPLATE_LOCALREQUIRE = module._TEMPLATE_LOCALREQUIRE:gsub(module._TEMPLATE_NAME, modname)
-    module._TEMPLATE_TAIL = module._TEMPLATE_TAIL:gsub(module._TEMPLATE_NAME, modname)
-    module._TEMPLATE_NAME = modname
-end
-
---- start pack your lua project
-function module.pack(rootLuaPath, toLuaPath)
-    module._ctx_pieces = {}
-    module._ctx_require_map = {}
-    module._pushHead()
-    module._pushLuafileRecursive(rootLuaPath)
-    module._push_tail(rootLuaPath)
-    local content = module._contentPieces()
-    module._writeLua(toLuaPath, content)
-end
-
--- # WRAP_MODULE
-
-local function module_initializer()
-    -- # CONTEXT_VALUE_INIT
-
-    module._require_patterns = {}
-
-    --- add the Require identifiers
-    -- module.AddRequireIdentifier("_G.require")
-    module.AddRequireIdentifier("require")
-
-    --- set global module name, default is "_GLOBAL_MOD_"
-    module.SetGlobalName("LOCAL")
-
-    -- # MODULE_EXPORT
-    ---@class luapack @pack a muiti-file lua project to a single lua file
-    local packlua = {
-        pack = module.pack,
-    }
-
-    return packlua
-end
-
-if DEFINE_REQUIRE_AS_COMMAND then
-    local _pathToEntry, _pathToOutput = ...
-    if _pathToEntry ~= nil and _pathToOutput ~= nil then
-        local packlua = module_initializer()
-        packlua.pack(_pathToEntry, _pathToOutput)
+--- custom configs
+---@param configs table<string, any>
+function M.config(configs)
+    for k, v in pairs(configs) do
+        CONFIG[k] = v
     end
 end
 
-return module_initializer()
+--- pack a muiti-file lua project to a single lua file
+---@param rootLuaPath string @the root lua file path
+---@param toLuaPath string @the output lua file path
+---@return boolean @success or not
+function M.pack(rootLuaPath, toLuaPath)
+    local pieces = {}
+    local requiremap = {}
+    pieces[#pieces + 1] = _TEMPLATE_HEADER_BUILDER()
+    _pushLuafileRecursive(rootLuaPath, pieces, requiremap)
+    pieces[#pieces + 1] = _TEMPLATE_FOOTER_BUILDER(rootLuaPath)
+    local content = table.concat(pieces)
+    return _writeLua(toLuaPath, content)
+end
+
+-- # MODULE_EXPORT:
+
+if USE_AS_CLI then
+    local rootLuaPath, toLuaPath = ...
+    if rootLuaPath and toLuaPath then
+        M.pack(rootLuaPath, toLuaPath)
+    else
+        print("Usage: lua packlua.lua path/to/entry.lua  path/to/output.lua")
+    end
+else
+    return M
+end

@@ -1,38 +1,62 @@
 --- lua websockets module (via luasocket)
 ---@author: Wynn Yo 2023-05-30 16:31:34
+local M = {}
 
--- # USAGE:
---[[ -----------------------------------------------------------
-    local websocket = require("websocket")
-    local client, err = websocket.connect("ws://localhost/www/chat.lua", function(peer)
-        print("connect:", peer)
-        peer:onRecv(function(data, opcode)
-            print("recv:", data, opcode)
-        end)
-        peer:send("hello from lua websocket我爱你中国")
-    end, function(peer, reason)
-        print("close:", reason)
-    end)
-    if not client then
-        print("connect failed:", err)
-        return
-    end
-    while true do
-        websocket.update()
-    end
-    -- client:close("bye")
---]] -----------------------------------------------------------
--- # REFERENCE PROJECTS
+-- # REFERENCES:
+
 -- https://github.com/openresty/lua-resty-websocket/blob/master/lib/resty/websocket/client.lua
 -- https://github.com/cloudwu/skynet/blob/master/lualib/http/websocket.lua
 -- https://zhuanlan.zhihu.com/p/556813075
 
--- # DEPENDENCIES
+-- # USAGE:
+--[[ -----------------------------------------------------------
+local websocket = require("websocket")
+local client, err = websocket.connect("ws://localhost/www/chat.lua", function(peer)
+    print("connect:", peer)
+    peer:onRecv(function(data, opcode)
+        print("recv:", data, opcode)
+    end)
+    peer:send("hello from lua websocket我爱你中国")
+end, function(peer, reason)
+    print("close:", reason)
+end)
+if not client then
+    print("connect failed:", err)
+    return
+end
+while true do
+    websocket.update()
+end
+-- client:close("bye")
+--]] -----------------------------------------------------------
+
+-- # DEPENDENCIES:
 local socket = require("socket") -- @https://lunarmodules.github.io/luasocket/
+assert(error, "`error` not found")
+assert(pairs, "`pairs` not found")
+assert(print, "`print` not found")
+assert(require, "`require` not found")
+assert(setmetatable, "`setmetatable` not found")
+assert(tonumber, "`tonumber` not found")
+assert(tostring, "`tostring` not found")
+assert(xpcall, "`xpcall` not found")
+assert(coroutine.create, "`coroutine.create` not found")
+assert(coroutine.resume, "`coroutine.resume` not found")
+assert(coroutine.status, "`coroutine.status` not found")
+assert(coroutine.yield, "`coroutine.yield` not found")
+assert(debug.traceback, "`debug.traceback` not found")
+assert(math.random, "`math.random` not found")
+assert(string.char, "`string.char` not found")
+assert(string.format, "`string.format` not found")
+assert(string.lower, "`string.lower` not found")
+assert(string.match, "`string.match` not found")
+assert(string.pack, "`string.pack` not found")
+assert(string.unpack, "`string.unpack` not found")
 
--- # STATIC CONFIG DEFINITION
+-- # CONSTANTS_DEFINITION:
+local _BASE64_ENCODE_MAP = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
--- # CONTEXT VALUE DEFINITION
+-- # PRIVATE_DEFINITION:
 
 --- the client object set
 local _client_objects = setmetatable({}, {__mode = "k"})
@@ -40,32 +64,26 @@ local _client_objects = setmetatable({}, {__mode = "k"})
 --- the server object set
 local _server_objects = setmetatable({}, {__mode = "k"})
 
--- # MODULE DEFINITION
-
-local M = {}
+-- # MODULE_DEFINITION:
 
 --- base64 encode
-do
-    local b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    local function encode(data)
-        return ((data:gsub(".", function(x)
-            local r, b = "", x:byte()
-            for i = 8, 1, -1 do
-                r = r .. (b % 2 ^ i - b % 2 ^ (i - 1) > 0 and "1" or "0")
-            end
-            return r;
-        end) .. "0000"):gsub("%d%d%d?%d?%d?%d?", function(x)
-            if (#x < 6) then
-                return ""
-            end
-            local c = 0
-            for i = 1, 6 do
-                c = c + (x:sub(i, i) == "1" and 2 ^ (6 - i) or 0)
-            end
-            return b:sub(c + 1, c + 1)
-        end) .. ({"", "==", "="})[#data % 3 + 1])
-    end
-    M._base64_encode = encode
+function M._base64_encode(data)
+    return ((data:gsub(".", function(x)
+        local r, b = "", x:byte()
+        for i = 8, 1, -1 do
+            r = r .. (b % 2 ^ i - b % 2 ^ (i - 1) > 0 and "1" or "0")
+        end
+        return r;
+    end) .. "0000"):gsub("%d%d%d?%d?%d?%d?", function(x)
+        if (#x < 6) then
+            return ""
+        end
+        local c = 0
+        for i = 1, 6 do
+            c = c + (x:sub(i, i) == "1" and 2 ^ (6 - i) or 0)
+        end
+        return _BASE64_ENCODE_MAP:sub(c + 1, c + 1)
+    end) .. ({"", "==", "="})[#data % 3 + 1])
 end
 
 function M._new(_socket)
@@ -387,6 +405,8 @@ function M.update()
         end
     end
 end
+
+-- # MODULE_EXPORT:
 
 M.__index = {
     send = M.send,

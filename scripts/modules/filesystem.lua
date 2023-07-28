@@ -1,14 +1,23 @@
 --- filesystem module
 ---@author: Wynn Yo 2023-04-28 15:23:55
-
--- # DEPENDENCIES
-local lfs = require("lfs") -- @https://lunarmodules.github.io/luafilesystem/
-
--- # MODULE_DEFINITION
 local M = {}
+
+-- # DEPENDENCIES:
+local lfs = require("lfs") -- @https://lunarmodules.github.io/luafilesystem/
+assert(error, "`error` not found")
+assert(require, "`require` not found")
+assert(select, "`select` not found")
+assert(io.open, "`io.open` not found")
+assert(os.remove, "`os.remove` not found")
+assert(os.rename, "`os.rename` not found")
+assert(package.config, "`package.config` not found")
+
+-- # CONSTANTS_DEFINITION:
 
 --- path separator
 M.PATH_SEPARATOR = package.config:sub(1, 1)
+
+-- # MODULE_DEFINITION:
 
 --- split a path into dir, name, extention
 --- e.g. "`D:/test/example.txt`" -> "`D:/test/`", "`example`", "`.txt`", `false`
@@ -377,5 +386,7 @@ function M.files(path, isRecursive, containSelf, filter)
         end
     end, list
 end
+
+-- # MODULE_EXPORT:
 
 return M
