@@ -23,7 +23,7 @@ local function regevent(client)
     end
     local recv = event.reg(client, send)
     client:onRecv(function(client, message)
-        local args = table_ser.serialize(message)
+        local args = table_ser.deserialize(message)
         return recv(table.unpack(args))
     end)
 end
@@ -31,7 +31,7 @@ local m = ...
 local mode = m == "c" and "client" or "s" and "server"
 if mode == "client" then
     -- #client side:
-    local client = net.connect("127.0.0.1", 1234, function(client)
+    local client = net.connect("127.0.0.1", 54188, function(client)
         regevent(client)
         event(client).OpenNotepad()
     end, print)
@@ -41,7 +41,7 @@ elseif mode == "server" then
         print("open notepad from", event.from())
         os.execute("@start notepad")
     end
-    local server = net.listen("0.0.0.0", 1234, function(client)
+    local server = net.listen("0.0.0.0", 54188, function(client)
         regevent(client)
     end, print)
 end

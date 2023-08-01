@@ -86,15 +86,15 @@ function M._base64_encode(data)
     end) .. ({"", "==", "="})[#data % 3 + 1])
 end
 
-function M._new(_socket)
+function M._new(_stream)
     local self, err = {}
-    if not _socket then
-        _socket, err = (socket.tcp or socket.tcp4)()
-        if not _socket then
+    if not _stream then
+        _stream, err = (socket.tcp or socket.tcp4)()
+        if not _stream then
             return nil, err
         end
     end
-    self.m_socket = _socket
+    self.m_stream = _stream
     self.m_protocol = nil
     self.m_host = nil
     self.m_port = nil
@@ -142,8 +142,8 @@ function M.connect(url, onConnect, onClose)
     client.m_uri = uri
     client.m_onConnect = onConnect
     client.m_onClose = onClose
-    local _socket = client.m_socket
-    local ok, err = _socket:connect(host, port)
+    local _stream = client.m_stream
+    local ok, err = _stream:connect(host, port)
     if not ok then
         return nil, "connect failed: " .. err
     end
@@ -169,17 +169,17 @@ function M.connect(url, onConnect, onClose)
         "Sec-WebSocket-Version: 13\r\n" ..
         "\r\n",
         uri, host, port, key)
-    local ok, err = _socket:send(handshake)
+    local ok, err = _stream:send(handshake)
     if not ok then
         return nil, "send handshake failed: " .. err
     end
     -- receive handshake response
-    local responseStatus, err = _socket:receive("*l")
+    local responseStatus, err = _stream:receive("*l")
     if not responseStatus then
         return nil, "receive handshake failed: " .. err
     end
     while true do
-        local line, err = _socket:receive("*l")
+        local line, err = _stream:receive("*l")
         if not line then
             return nil, "receive handshake failed: " .. err
         end
@@ -191,7 +191,7 @@ function M.connect(url, onConnect, onClose)
     if statusCode ~= "101" then -- 101 Switching Protocols
         return nil, "handshake failed: " .. (reason or "invalid handshake response")
     end
-    local ok, err = _socket:settimeout(0)
+    local ok, err = _stream:settimeout(0)
     if not ok then
         return nil, "set socket timeout failed: " .. err
     end
@@ -245,7 +245,7 @@ function M:send(message, opcode, mask)
         (fin and 0x80 or 0) + opcode,
         (mask and 0x80 or 0) + payloadLenBase
     ) .. payloadLenExt .. maskKey .. payload
-    local ok, err = self.m_socket:send(frame)
+    local ok, err = self.m_stream:send(frame)
     return ok, err
 end
 
@@ -279,8 +279,8 @@ function M:_recvCoroutine()
     local _nextlen = 2
     local _nextop = "head"
     while true do
-        local _socket = self.m_socket
-        local _data, err = _socket:receive(_nextlen)
+        local _stream = self.m_stream
+        local _data, err = _stream:receive(_nextlen)
         if _data then
             if _nextop == "head" then
                 local _1, _2 = _data:byte(1, 2)
@@ -368,7 +368,7 @@ end
 ---@param reason string @the reason to close
 ---@param opcode number @the opcode, 1000 for normal, 1001 for going away, 1002 for protocol error, 1003 for unsupported data, 1005 for no status, 1006 for abnormal close, 1007 for invalid payload, 1008 for policy violation, 1009 for message too big, 1010 for extension required, 1011 for internal server error, 1012 for service restart, 1013 for try again later, 1014 for bad gateway, 1015 for TLS handshake
 function M:close(reason, opcode)
-    if self.m_socket then
+    if self.m_stream then
         opcode = opcode or 1000
         reason = reason or ""
         local len = #reason
@@ -381,8 +381,8 @@ function M:_onCloseInternal(reason)
     _client_objects[self] = nil
     _server_objects[self] = nil
     self:onRecv(false)
-    self.m_socket:close()
-    self.m_socket = nil
+    self.m_stream:close()
+    self.m_stream = nil
     if self.m_onClose then
         local ok, err = xpcall(self.m_onClose, debug.traceback, self, reason)
         if not ok then

@@ -8,7 +8,7 @@ local net = require("net")
 local mode = "client" or "server"
 if mode == "client" then
     -- #client side:
-    local client = net.connect("127.0.0.1", 1234, function(client)
+    local client = net.connect("127.0.0.1", 54188, function(client)
         print("net conncet", client:getPeerInfo().host)
         client:onRecv(function(client, message)
             print("client receive: " .. message)
@@ -19,7 +19,7 @@ if mode == "client" then
     end)
 elseif mode == "server" then
     -- #server side:
-    local server = net.listen("0.0.0.0", 1234, function(client)
+    local server = net.listen("0.0.0.0", 54188, function(client)
         print("net conncet", client:getPeerInfo().host)
         client:onRecv(function(client, message)
             print("server receive: " .. message)
@@ -67,9 +67,9 @@ M._client_objects = {}
 
 -- # MODULE_DEFINITION:
 
-function M._new(_socket)
+function M._new(_stream)
     local self = {}
-    self.m_socket = _socket or (socket.tcp or socket.tcp4)()
+    self.m_stream = _stream or (socket.tcp or socket.tcp4)()
     self.m_host = nil
     self.m_port = nil
     self.m_onConnect = nil
@@ -88,9 +88,9 @@ end
 function M:mark(key, value)
     assert(key, "[net]key is nil")
     if value ~= nil then
-        M.m_marks[key] = value
+        self.m_marks[key] = value
     end
-    return M.m_marks[key]
+    return self.m_marks[key]
 end
 
 --- listen on the given host and port
@@ -108,10 +108,10 @@ function M.listen(host, port, onConnect, onClose, backlog)
     server.m_port = port
     server.m_onConnect = onConnect
     server.m_onClose = onClose
-    local _socket = server.m_socket
-    _socket:setoption("reuseaddr", true)
-    _socket:bind(host, port)
-    local ok, err = _socket:listen(backlog)
+    local _stream = server.m_stream
+    _stream:bind(host, port)
+    _stream:setoption("reuseaddr", true)
+    local ok, err = _stream:listen(backlog)
     if not ok then
         M.close(server, "[net]listen failed: " .. tostring(err))
         return nil
@@ -133,8 +133,8 @@ function M.connect(host, port, onConnect, onClose)
     client.m_port = port
     client.m_onConnect = onConnect
     client.m_onClose = onClose
-    local _socket = client.m_socket
-    local ok, err = _socket:connect(host, port)
+    local _stream = client.m_stream
+    local ok, err = _stream:connect(host, port)
     if not ok then
         M.close(client, "[net]connect failed: " .. tostring(err))
         return nil
@@ -144,32 +144,32 @@ function M.connect(host, port, onConnect, onClose)
 end
 
 function M:_onListen()
-    M._server_objects[M] = true
-    M.m_createdTime = os.time()
-    M.m_lastAccessTime = M.m_createdTime
-    return M
+    M._server_objects[self] = true
+    self.m_createdTime = os.time()
+    self.m_lastAccessTime = self.m_createdTime
+    return self
 end
 
 function M:_onConnect()
-    M._client_objects[M] = true
-    M.m_createdTime = os.time()
-    M.m_lastAccessTime = M.m_createdTime
-    if M.m_onConnect then
-        local ok, err = xpcall(M.m_onConnect, debug.traceback, M)
+    M._client_objects[self] = true
+    self.m_createdTime = os.time()
+    self.m_lastAccessTime = self.m_createdTime
+    if self.m_onConnect then
+        local ok, err = xpcall(self.m_onConnect, debug.traceback, self)
         if not ok then
-            M.close(M, "[net]execute onConnect failed: " .. tostring(err))
+            M.close(self, "[net]execute onConnect failed: " .. tostring(err))
             return
         end
     end
-    return M
+    return self
 end
 
 function M:_onReceive(message)
-    M.m_lastAccessTime = os.time()
-    if M.m_onRecv then
-        local ok, err = xpcall(M.m_onRecv, debug.traceback, M, message)
+    self.m_lastAccessTime = os.time()
+    if self.m_onRecv then
+        local ok, err = xpcall(self.m_onRecv, debug.traceback, self, message)
         if not ok then
-            M.close(M, "[net]execute onRecv failed: " .. err)
+            M.close(self, "[net]execute onRecv failed: " .. err)
             return
         end
     end
@@ -177,8 +177,8 @@ end
 
 --- return a table of host, port and family infos
 function M:getPeerInfo()
-    local _socket = M.m_socket
-    local host, port, family = _socket:getpeername()
+    local _stream = self.m_stream
+    local host, port, family = _stream:getpeername()
     return {
         host = host,
         port = port,
@@ -188,22 +188,22 @@ end
 
 --- return the create time of the net object
 function M:getCreatedTime()
-    return M.m_createdTime
+    return self.m_createdTime
 end
 
 --- return the last access time of the net object
 function M:getLastAccessTime()
-    return M.m_lastAccessTime
+    return self.m_lastAccessTime
 end
 
 --- need to be called in the main thread
 function M.update()
     --- server accept
     for server in pairs(M._server_objects) do
-        local _socket = server.m_socket
-        local ok, err = _socket:settimeout(0)
+        local _stream = server.m_stream
+        local ok, err = _stream:settimeout(0)
         if ok then
-            local _accept, err = _socket:accept()
+            local _accept, err = _stream:accept()
             if _accept then
                 server.m_lastAccessTime = os.time()
                 local client = M._new(_accept)
@@ -227,7 +227,7 @@ function M.update()
         if recvThread and coroutine.status(recvThread) ~= "dead" then
             local ok, err = coroutine.resume(recvThread, client)
             if not ok then
-                M.close(self, "[net]receive coroutine failed: " .. tostring(err))
+                M.close(client, "[net]receive coroutine failed: " .. tostring(err))
                 return
             end
         end
@@ -237,14 +237,14 @@ end
 --- set a handler to handle received message, and begin to receive message
 ---@param msgHandler fun(target:net, message:string)
 function M:onRecv(msgHandler)
-    M.m_onRecv = msgHandler
+    self.m_onRecv = msgHandler
     if msgHandler == false then
-        if M.m_recvThread then
-            M.m_recvThread = nil
+        if self.m_recvThread then
+            self.m_recvThread = nil
         end
     else
-        if not M.m_recvThread then
-            M.m_recvThread = coroutine.create(M._recvCoroutine)
+        if not self.m_recvThread then
+            self.m_recvThread = coroutine.create(M._recvCoroutine)
         end
     end
 end
@@ -252,34 +252,34 @@ end
 function M:_recvCoroutine()
     local _recvingLength = nil
     while true do
-        local _socket = M.m_socket
-        local ok, err = _socket:settimeout(0)
+        local _stream = self.m_stream
+        local ok, err = _stream:settimeout(0)
         if ok then
             if _recvingLength == nil then
-                local _data, err = _socket:receive(4)
+                local _data, err = _stream:receive(4)
                 if _data then
                     local _1, _2, _3, _4 = string.byte(_data, 1, 4)
                     _recvingLength = _1 * 16777216 + _2 * 65536 + _3 * 256 + _4
                 elseif err == "timeout" then
                     coroutine.yield()
                 else
-                    M.close(M, "[net]receive failed: " .. tostring(err))
+                    M.close(self, "[net]receive failed: " .. tostring(err))
                     return
                 end
             else
-                local _data, err = _socket:receive(_recvingLength)
+                local _data, err = _stream:receive(_recvingLength)
                 if _data then
                     _recvingLength = nil
-                    M._onReceive(M, _data)
+                    M._onReceive(self, _data)
                 elseif err == "timeout" then
                     coroutine.yield()
                 else
-                    M.close(M, "[net]receive failed: " .. tostring(err))
+                    M.close(self, "[net]receive failed: " .. tostring(err))
                     return
                 end
             end
         else
-            M.close(M, "[net]settimeout failed (receive): " .. tostring(err))
+            M.close(self, "[net]settimeout failed (receive): " .. tostring(err))
             return
         end
     end
@@ -289,31 +289,31 @@ end
 ---@param message string
 function M:send(message)
     assert(message, "[net]message is nil")
-    local _socket = assert(M.m_socket, "[net]bad status (send)")
+    local _stream = assert(self.m_stream, "[net]bad status (send)")
     local _sendingLength = #message
     local _1, _2, _3, _4 = math.floor(_sendingLength / 16777216), math.floor(_sendingLength / 65536) % 256,
         math.floor(_sendingLength / 256) % 256, _sendingLength % 256
     local _data = string.char(_1, _2, _3, _4) .. message
-    local ok, err = _socket:send(_data)
+    local ok, err = _stream:send(_data)
     if not ok then
-        M.close(M, "[net]send failed: " .. tostring(err))
+        M.close(self, "[net]send failed: " .. tostring(err))
     end
 end
 
 --- close the net object
 ---@param reason string @witch pass to the onClose callback
 function M:close(reason)
-    local _socket = M.m_socket
-    if _socket then
-        M:onRecv(false)
-        M.m_socket = nil
-        M._client_objects[M] = nil
-        M._server_objects[M] = nil
-        _socket:close()
-        if M.m_onClose then
-            local ok, err = xpcall(M.m_onClose, debug.traceback, M, reason)
+    local _stream = self.m_stream
+    if _stream then
+        self:onRecv(false)
+        self.m_stream = nil
+        M._client_objects[self] = nil
+        M._server_objects[self] = nil
+        _stream:close()
+        if self.m_onClose then
+            local ok, err = xpcall(self.m_onClose, debug.traceback, self, reason)
             if not ok then
-                M.close(M, "[net]execute onClose failed: " .. tostring(err))
+                M.close(self, "[net]execute onClose failed: " .. tostring(err))
             end
         end
     end
@@ -339,4 +339,3 @@ M.__proto = {
 }
 
 return M.__proto
-

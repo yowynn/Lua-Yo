@@ -1,5 +1,5 @@
 local table_ser = require("table_serialization")
-local json = require("dkjson")
+local json = require("json")
 print(table_ser.dump(json))
 print("=============encode==============")
 print(json.encode(1))

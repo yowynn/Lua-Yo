@@ -2,12 +2,11 @@ local m = select(1, ...)
 local mode = m == "c" and "client" or m == "s" and "server" or nil
 print("start net test: " .. mode)
 
-local net = require("net-luasocket")
--- local net = require("net-luv")
+local net = require("net")
 
 if mode == "client" then
     -- #client side:
-    local client = net.connect("127.0.0.1", 1234, function(client)
+    local client = net.connect("127.0.0.1", 54188, function(client)
         print("net conncet", client:getPeerInfo().host)
         client:onRecv(function(client, message)
             print("client receive: " .. message)
@@ -18,7 +17,7 @@ if mode == "client" then
     end)
 elseif mode == "server" then
     -- #server side:
-    local server = net.listen("0.0.0.0", 1234, function(client)
+    local server = net.listen("0.0.0.0", 54188, function(client)
         print("net conncet", client:getPeerInfo().host)
         client:onRecv(function(client, message)
             print("server receive: " .. message)
