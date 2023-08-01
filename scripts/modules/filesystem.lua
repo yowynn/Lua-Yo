@@ -389,4 +389,23 @@ end
 
 -- # MODULE_EXPORT:
 
-return M
+M.__proto = {
+    splitPath = M.splitPath,
+    combinePath = M.combinePath,
+    checkPath = M.checkPath,
+    pathInfo = M.pathInfo,
+    createFile = M.createFile,
+    removeFile = M.removeFile,
+    moveFile = M.moveFile,
+    copyFile = M.copyFile,
+    createDirectory = M.createDirectory,
+    removeDirectory = M.removeDirectory,
+    moveDirectory = M.moveDirectory,
+    copyDirectory = M.copyDirectory,
+    remove = M.remove,
+    move = M.move,
+    copy = M.copy,
+    files = M.files,
+}
+
+return M.__proto

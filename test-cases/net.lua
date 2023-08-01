@@ -1,8 +1,9 @@
-local m = ...
+local m = select(1, ...)
 local mode = m == "c" and "client" or m == "s" and "server" or nil
 print("start net test: " .. mode)
 
-local net = require("net")
+local net = require("net-luasocket")
+-- local net = require("net-luv")
 
 if mode == "client" then
     -- #client side:

@@ -1,5 +1,51 @@
 local tabler = require("tabler")
 
+print("test1:")
+print("########################################################")
+local data = {
+    { name = "Wynn", age = 18, },
+    { name = "爱新觉罗·闪电", age = 19, },
+}
+local columns = {
+    { key = "name", title = "名字", width = 20, },
+    { key = "age", title = "年龄", width = 50, align = "right", handler = function(val)
+        return val .. " years old"
+    end, },
+}
+print(tabler.defines(columns).show(data))
+
+print("test2:")
+print("########################################################")
+local data = {
+    {"小明","男","18", "顺义区", "18223492341"},
+    {"小红","女","20", "朝阳区", "18223492342"},
+    {"小刚","男","22", "海淀区", "18223492343"},
+    {"小霞","女","19", "丰台区", "18223492344"},
+    {"小王","男","21", "石景山区", "18223492345"},
+}
+local columns = {
+    {
+        key = 0,
+        title = "个人简介",
+        width = nil,
+        align = "left",
+        handler = function(val, item)
+            local sex = item[2] == "男" and "他" or "她"
+            return string.format("%s是个%s孩子，今年%s岁了，家住北京%s，可以打电话号码%s找到%s~", item[1], item[2], item[3], item[4], item[5], sex)
+        end,
+    },
+    {
+        key = 0,
+        title = "|",
+        handler = function(val, item)
+            return "|"
+        end,
+    },
+}
+print(tabler.defines(columns).show(data))
+
+print("test3:")
+print("########################################################")
 local testdata = {
     [1] = {
         ["author_name"] = "刘芳",

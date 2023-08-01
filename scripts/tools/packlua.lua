@@ -208,12 +208,13 @@ end
 
 -- # MODULE_EXPORT:
 
-if USE_AS_CLI then
-    local rootLuaPath, toLuaPath = ...
+if USE_AS_CLI and arg then
+    local rootLuaPath = arg[1]
+    local toLuaPath = arg[2]
     if rootLuaPath and toLuaPath then
         M.pack(rootLuaPath, toLuaPath)
     else
-        print("Usage: lua packlua.lua path/to/entry.lua  path/to/output.lua")
+        print("Usage: lua packlua.lua <path/to/entry.lua> <path/to/output.lua>")
     end
 else
     return M

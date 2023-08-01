@@ -15,7 +15,14 @@ lua checkdependencies.lua path/to/file.lua
 local USE_AS_CLI = true
 
 -- # DEPENDENCIES:
--- TODO: ASSERT DEPENDENCIES HERE
+assert(assert, "`assert` not found")
+assert(ipairs, "`ipairs` not found")
+assert(print, "`print` not found")
+assert(tostring, "`tostring` not found")
+assert(io.open, "`io.open` not found")
+assert(string.find, "`string.find` not found")
+assert(string.gsub, "`string.gsub` not found")
+assert(table.concat, "`table.concat` not found")
 
 -- # CONSTANTS_DEFINITION:
 
@@ -145,23 +152,23 @@ local LUA_FUNCTION_LITERAL = { -- lua 5.4
     "package.searchers",
     "package.searchpath",
     -- string
-    "string.byte",
-    "string.char",
-    "string.dump",
-    "string.find",
-    "string.format",
-    "string.gmatch",
-    "string.gsub",
-    "string.len",
-    "string.lower",
-    "string.match",
-    "string.pack",
-    "string.packsize",
-    "string.rep",
-    "string.reverse",
-    "string.sub",
-    "string.unpack",
-    "string.upper",
+    "string.byte", "[%w_]+:byte",
+    "string.char", "[%w_]+:char",
+    "string.dump", "[%w_]+:dump",
+    "string.find", "[%w_]+:find",
+    "string.format", "[%w_]+:format",
+    "string.gmatch", "[%w_]+:gmatch",
+    "string.gsub", "[%w_]+:gsub",
+    "string.len", "[%w_]+:len",
+    "string.lower", "[%w_]+:lower",
+    "string.match", "[%w_]+:match",
+    "string.pack", "[%w_]+:pack",
+    "string.packsize", "[%w_]+:packsize",
+    "string.rep", "[%w_]+:rep",
+    "string.reverse", "[%w_]+:reverse",
+    "string.sub", "[%w_]+:sub",
+    "string.unpack", "[%w_]+:unpack",
+    "string.upper", "[%w_]+:upper",
     -- table
     "table.concat",
     "table.insert",
@@ -201,7 +208,7 @@ function M.checkDependencies(luafile, startLiteral)
     end
     local whereToStart = 1
     if startLiteral then
-        local start = string.find(content, whereToStart, 1, true)
+        local start = string.find(content, startLiteral, 1, true)
         if start then
             whereToStart = start
         end
@@ -219,19 +226,20 @@ function M.checkDependencies(luafile, startLiteral)
     end
     local result = table.concat(builder)
     if result == "" then
-        print("[CheckDependencies]no dependencies found: " .. tostring(luafile))
+        print("[CheckDependencies]no dependencies found: " .. tostring(luafile),  startLiteral)
         return
     end
-    print("[CheckDependencies]dependencies found: " .. tostring(luafile))
+    print("[CheckDependencies]dependencies found: " .. tostring(luafile), startLiteral)
     print(result)
 end
 
 -- # MODULE_EXPORT:
 
-if USE_AS_CLI then
-    local luafile, startLiteral = ...
+if USE_AS_CLI and arg then
+    local luafile = arg[1]
+    local startLiteral = arg[2]
     if not luafile then
-        print("Usage: lua checkdependencies.lua <luafile> [startLiteral]")
+        print("Usage: lua checkdependencies.lua <luafile> [<startLiteral>]")
         return
     end
     M.checkDependencies(luafile, startLiteral)

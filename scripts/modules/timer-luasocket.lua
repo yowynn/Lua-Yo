@@ -109,4 +109,11 @@ M.__index = {
     rest = M.rest,
 }
 
-return M
+M.__proto = {
+    start = M.start,
+    stop = M.stop,
+    rest = M.rest,
+    update = M.update,
+}
+
+return M.__proto

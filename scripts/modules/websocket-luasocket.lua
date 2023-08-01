@@ -414,7 +414,9 @@ M.__index = {
     close = M.close,
 }
 
-return {
+M.__proto = {
     connect = M.connect,
     update = M.update,
 }
+
+return M.__proto

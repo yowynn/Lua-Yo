@@ -18,4 +18,9 @@ function test(caseName, ...)
     print("")
 end
 
-dofile("test-cases/" .. moduleName .. ".lua")
+local function _dofile(path, ...)
+    local f = assert(loadfile(path))
+    return f(...)
+end
+
+_dofile("test-cases/" .. moduleName .. ".lua", select(2, ...))

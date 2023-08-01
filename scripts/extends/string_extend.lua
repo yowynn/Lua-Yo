@@ -1,42 +1,66 @@
-local module = {}
+--- extend string module
+---@author: Wynn Yo 2023-08-01 11:34:34
+local M = {}
 
-function module.split(str, sep)
+-- # REFERENCES:
+
+-- # USAGE:
+--[[ -----------------------------------------------------------
+-- TODO: WRITE USAGE HERE
+--]] -----------------------------------------------------------
+
+-- # CONFIGS:
+
+-- # DEPENDENCIES:
+-- TODO: ASSERT DEPENDENCIES HERE
+
+-- # CONSTANTS_DEFINITION:
+
+-- # PRIVATE_DEFINITION:
+
+-- # MODULE_DEFINITION:
+
+--- split string by separator
+---@param s string @the string to split
+---@param sep string @the separator
+---@return fun(): number, string @iterator, returns the index and split item
+function M.split(s, sep)
     local index = 0
     local p = 1
     return function()
-        if p > #str then
+        if p > #s then
             return
         end
-        local p1, p2 = str:find(sep, p, true)
+        local p1, p2 = s:find(sep, p, true)
         if p1 then
-            local item = str:sub(p, p1 - 1)
+            local item = s:sub(p, p1 - 1)
             index = index + 1
             p = p2 + 1
             return index, item
         else
-            local item = str:sub(p)
+            local item = s:sub(p)
             index = index + 1
-            p = #str + 1
+            p = #s + 1
             return index, item
         end
     end
 end
 
---- 从HTML文本中获取纯文本
----@param s string 给定字符串
----@return string 剔除HTML标签后的字符串
-function module.plaintext(s)
+--- get plain text from html text
+---@param s string @the string to get plain text
+---@return string @the plain text
+function M.plaintext(s)
     local str = string.gsub(s, "<.->", "")
     return str
 end
 
---- 返回给定utf-8字符串的视觉宽度
----@param s string 给定字符串
----@param w1 number 占1字节字符视觉宽度, 默认为1 (数字字母一般在此)
----@param w2 number 占2字节字符视觉宽度, 默认为1
----@param w3 number 占3字节字符视觉宽度, 默认为2 (汉字一般在此)
----@param w4 number 占4字节字符视觉宽度, 默认为2
----@return number 字符串视觉宽度
+--- get visual width of utf-8 string
+---@param s string @the string to get visual width
+---@param w1 number @visual width of 1 byte character, default is 1 (number and letter are usually here)
+---@param w2 number @visual width of 2 byte character, default is 1
+---@param w3 number @visual width of 3 byte character, default is 2 (chinese character is usually here)
+---@param w4 number @visual width of 4 byte character, default is 2
+---@return number @the visual width of utf-8 string
 function module.vlen_utf8(s, w1, w2, w3, w4)
     w1 = w1 or 1
     w2 = w2 or 1
@@ -79,17 +103,6 @@ function module.vlen_utf8(s, w1, w2, w3, w4)
 end
 
 
-local function module_initializer(filterK)
-    for k, v in pairs(module) do
-        if filterK(k) then
-            if not string[k] then
-                string[k] = v
-            end
-        end
-    end
-    return string
-end
+-- # MODULE_EXPORT:
 
-return module_initializer(function(k)
-    return k:sub(1, 1) ~= "_"
-end)
+return M
